@@ -443,13 +443,35 @@
                 @endif
             </div>
 
-            {{-- Mini map preview (Leaflet + OSM — real streets) --}}
+            {{-- Mini map: route from user → business (Leaflet + OSM + OSRM) --}}
             <div class="card biz-mini-map">
                 <div id="biz-mini-map"
                      data-lat="{{ $business->lat }}"
                      data-lng="{{ $business->lng }}"
                      data-name="{{ $business->name }}"
                      style="position: absolute; inset: 0; background: #EEF1F4;"></div>
+
+                {{-- Route info overlay --}}
+                <div id="biz-route-info" class="biz-route-info" hidden>
+                    <div class="biz-route-info-row">
+                        <span class="biz-route-info-dot" style="background: #0D9488;"></span>
+                        <span id="biz-route-distance">— كم</span>
+                        <span style="color: var(--ink-4); margin: 0 6px;">·</span>
+                        <span id="biz-route-duration">— دقيقة</span>
+                    </div>
+                </div>
+
+                {{-- Locate me button --}}
+                <button type="button" id="biz-locate-btn" class="biz-locate-btn" aria-label="موقعي">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="2.5"/>
+                        <line x1="12" y1="2"  x2="12" y2="5"/>
+                        <line x1="12" y1="19" x2="12" y2="22"/>
+                        <line x1="2"  y1="12" x2="5"  y2="12"/>
+                        <line x1="19" y1="12" x2="22" y2="12"/>
+                    </svg>
+                </button>
+
                 <a href="https://www.google.com/maps/dir/?api=1&destination={{ $business->lat }},{{ $business->lng }}" target="_blank" class="biz-mini-map-cta">
                     <x-icon name="directions" :size="14"/> الاتجاهات
                 </a>
@@ -920,9 +942,51 @@ textarea.biz-claim-input { resize: vertical; min-height: 70px; line-height: 1.6;
 
 .biz-mini-map {
     position: relative;
-    height: 180px;
+    height: 220px;
     overflow: hidden;
 }
+.biz-route-info {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: rgba(255,255,255,.96);
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+    padding: 7px 11px;
+    border-radius: 11px;
+    box-shadow: 0 6px 16px -4px rgba(0,27,42,.18);
+    z-index: 500;
+    font-size: 12px;
+    font-weight: 800;
+    color: var(--ink-1);
+}
+.biz-route-info-row { display: flex; align-items: center; gap: 6px; }
+.biz-route-info-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    box-shadow: 0 0 0 3px rgba(13,148,136,.18);
+}
+.biz-locate-btn {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    width: 32px; height: 32px;
+    border-radius: 10px;
+    background: white;
+    border: 1px solid var(--line);
+    color: var(--ink-1);
+    display: grid; place-items: center;
+    cursor: pointer;
+    box-shadow: 0 6px 16px -4px rgba(0,27,42,.16);
+    z-index: 500;
+    transition: background .12s ease;
+}
+.biz-locate-btn:hover { background: #FAFBFC; }
+.biz-locate-btn.is-loading svg { animation: locateSpin .8s linear infinite; }
+@keyframes locateSpin { to { transform: rotate(360deg); } }
+.banhawy-route-line { filter: drop-shadow(0 2px 4px rgba(13,148,136,.4)); }
+.banhawy-user-pin { background: transparent !important; border: none !important; }
 .biz-mini-map-cta {
     position: absolute;
     bottom: 12px; right: 12px; left: 12px;
@@ -1049,7 +1113,8 @@ textarea.biz-claim-input { resize: vertical; min-height: 70px; line-height: 1.6;
         maxZoom: 19,
     }).addTo(map);
 
-    var icon = L.divIcon({
+    // Business pin (destination)
+    var bizIcon = L.divIcon({
         className: 'banhawy-pin',
         html: '<svg viewBox="0 0 28 32" width="34" height="38">' +
               '<path d="M14 0a14 14 0 0 0-14 14c0 10 14 18 14 18s14-8 14-18A14 14 0 0 0 14 0z" fill="#0D9488"/>' +
@@ -1057,7 +1122,130 @@ textarea.biz-claim-input { resize: vertical; min-height: 70px; line-height: 1.6;
         iconSize:   [34, 38],
         iconAnchor: [17, 38],
     });
-    L.marker([lat, lng], { icon: icon, title: name }).addTo(map);
+    L.marker([lat, lng], { icon: bizIcon, title: name }).addTo(map);
+
+    // ── Routing: user → business via OSRM ─────────────────────────
+    var routeLayer  = null;
+    var userMarker  = null;
+    var routeInfoEl = document.getElementById('biz-route-info');
+    var distanceEl  = document.getElementById('biz-route-distance');
+    var durationEl  = document.getElementById('biz-route-duration');
+    var locateBtn   = document.getElementById('biz-locate-btn');
+
+    var userIcon = L.divIcon({
+        className: 'banhawy-user-pin',
+        html: '<svg viewBox="0 0 24 24" width="22" height="22">' +
+              '<circle cx="12" cy="12" r="10" fill="#fff" opacity=".85"/>' +
+              '<circle cx="12" cy="12" r="6"  fill="#0D6EFD"/>' +
+              '<circle cx="12" cy="12" r="3"  fill="#fff"/></svg>',
+        iconSize:   [22, 22],
+        iconAnchor: [11, 11],
+    });
+
+    function fmtDistance(meters) {
+        if (meters < 1000) return Math.round(meters) + ' متر';
+        return (meters / 1000).toFixed(meters < 10000 ? 1 : 0) + ' كم';
+    }
+    function fmtDuration(seconds) {
+        var mins = Math.round(seconds / 60);
+        if (mins < 60) return mins + ' دقيقة';
+        var h = Math.floor(mins / 60);
+        var m = mins % 60;
+        return h + ' س' + (m > 0 ? ' و ' + m + ' د' : '');
+    }
+
+    function clearRoute() {
+        if (routeLayer) { map.removeLayer(routeLayer); routeLayer = null; }
+        if (userMarker) { map.removeLayer(userMarker); userMarker = null; }
+        if (routeInfoEl) routeInfoEl.hidden = true;
+    }
+
+    function drawStraightLine(uLat, uLng) {
+        // Fallback when OSRM fails: a dashed straight line
+        routeLayer = L.polyline([[uLat, uLng], [lat, lng]], {
+            color: '#0D9488',
+            weight: 4,
+            opacity: 0.85,
+            dashArray: '8 6',
+            className: 'banhawy-route-line',
+        }).addTo(map);
+
+        var meters = map.distance([uLat, uLng], [lat, lng]);
+        if (distanceEl) distanceEl.textContent = fmtDistance(meters);
+        if (durationEl) durationEl.textContent = '≈ ' + fmtDuration(meters / 8.33); // ~30 km/h
+        if (routeInfoEl) routeInfoEl.hidden = false;
+    }
+
+    function fetchRoute(uLat, uLng) {
+        // OSRM public demo — fine for low-volume usage
+        var url = 'https://router.project-osrm.org/route/v1/driving/'
+                + uLng + ',' + uLat + ';' + lng + ',' + lat
+                + '?overview=full&geometries=geojson';
+
+        return fetch(url).then(function (r) {
+            if (!r.ok) throw new Error('osrm http ' + r.status);
+            return r.json();
+        }).then(function (data) {
+            if (!data.routes || !data.routes[0]) throw new Error('no routes');
+            var route = data.routes[0];
+            var coords = route.geometry.coordinates.map(function (c) { return [c[1], c[0]]; });
+
+            // Outline (white) + main line (teal) for nice depth
+            var outline = L.polyline(coords, {
+                color: '#ffffff', weight: 8, opacity: 0.95, lineCap: 'round', lineJoin: 'round',
+            });
+            var line = L.polyline(coords, {
+                color: '#0D9488', weight: 5, opacity: 0.95, lineCap: 'round', lineJoin: 'round',
+                className: 'banhawy-route-line',
+            });
+            routeLayer = L.layerGroup([outline, line]).addTo(map);
+
+            if (distanceEl) distanceEl.textContent = fmtDistance(route.distance);
+            if (durationEl) durationEl.textContent = fmtDuration(route.duration);
+            if (routeInfoEl) routeInfoEl.hidden = false;
+        });
+    }
+
+    function plotRoute(uLat, uLng) {
+        clearRoute();
+        userMarker = L.marker([uLat, uLng], { icon: userIcon, title: 'موقعك' }).addTo(map);
+
+        // Fit bounds to user + business
+        var bounds = L.latLngBounds([[uLat, uLng], [lat, lng]]);
+        map.fitBounds(bounds, { padding: [30, 30], maxZoom: 16 });
+
+        fetchRoute(uLat, uLng).catch(function () {
+            // Network/OSRM failure → fall back to straight line so users still see the path
+            drawStraightLine(uLat, uLng);
+        });
+    }
+
+    function locate(forcePrompt) {
+        if (! ('geolocation' in navigator)) return;
+        if (locateBtn) locateBtn.classList.add('is-loading');
+
+        navigator.geolocation.getCurrentPosition(function (pos) {
+            if (locateBtn) locateBtn.classList.remove('is-loading');
+            plotRoute(pos.coords.latitude, pos.coords.longitude);
+        }, function () {
+            if (locateBtn) locateBtn.classList.remove('is-loading');
+            if (forcePrompt) {
+                // Only alert when user explicitly clicked the locate button
+                // Silent fail on auto-attempt so the map still shows the destination
+            }
+        }, {
+            enableHighAccuracy: false,
+            timeout: 8000,
+            maximumAge: 60000,
+        });
+    }
+
+    if (locateBtn) {
+        locateBtn.addEventListener('click', function () { locate(true); });
+    }
+
+    // Auto-attempt on page load (browser will prompt the first time only)
+    locate(false);
 })();
 </script>
 
