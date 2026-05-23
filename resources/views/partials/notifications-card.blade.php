@@ -1,5 +1,5 @@
 @auth
-<div id="notif-card" class="card" style="padding: 14px; display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+<div id="notif-card" class="card" style="padding: 14px; display: none; align-items: center; gap: 12px; margin-bottom: 12px;">
     <span style="width: 40px; height: 40px; border-radius: 12px; background: var(--teal-50); display: grid; place-items: center; color: var(--teal); flex-shrink: 0;">
         <x-icon name="bell" :size="18" stroke="#0D9488"/>
     </span>
@@ -26,17 +26,18 @@
     var sub     = document.getElementById('notif-sub');
     if (!card || !window.banhawyPush) return;
 
+    function showCard() { card.style.display = 'flex'; }
+    function hideCard() { card.style.display = 'none'; }
+
     var supported = 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
     if (!supported) {
-        card.style.opacity = '.7';
-        enable.disabled = true;
-        title.textContent = 'الإشعارات غير مدعومة';
-        sub.textContent = 'متصفّحك لا يدعم Web Push.';
+        // Unsupported → keep card hidden entirely
         return;
     }
 
-    // Permission was denied at the OS level → tell the user
+    // Permission denied at the OS level → show the card so the user knows why
     if (Notification.permission === 'denied') {
+        showCard();
         title.textContent = 'الإشعارات محظورة';
         sub.textContent = 'افتح إعدادات الموقع في المتصفح واسمح بالإشعارات.';
         enable.disabled = true;
@@ -44,12 +45,18 @@
     }
 
     function setEnabledUI(on) {
-        enable.style.display  = on ? 'none' : 'inline-flex';
-        disable.style.display = on ? 'inline-flex' : 'none';
-        title.textContent = on ? 'الإشعارات مفعّلة ✓' : 'فعّل الإشعارات';
-        sub.textContent   = on
-            ? 'لو حبّيت توقفها، اضغط إلغاء.'
-            : (@json(auth()->user()->isOwner()) ? 'هتوصلك تنبيهات الطلبات الجديدة فورًا.' : 'هتوصلك عروض ومستجدات.');
+        if (on) {
+            // Already subscribed → hide the card completely
+            hideCard();
+            return;
+        }
+        showCard();
+        enable.style.display  = 'inline-flex';
+        disable.style.display = 'none';
+        title.textContent = 'فعّل الإشعارات';
+        sub.textContent   = @json(auth()->user()->isOwner())
+            ? 'هتوصلك تنبيهات الطلبات الجديدة فورًا.'
+            : 'هتوصلك عروض ومستجدات.';
     }
 
     window.banhawyPush.isSubscribed().then(setEnabledUI);

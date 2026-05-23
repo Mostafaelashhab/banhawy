@@ -333,12 +333,17 @@
 .biz-sticky-cta {
     position: sticky;
     bottom: 0;
-    padding: 10px 14px 14px;
-    background: white;
-    border-top: 1px solid var(--line);
+    padding: 10px 14px;
+    padding-bottom: calc(14px + env(safe-area-inset-bottom));
+    background: rgba(255, 255, 255, 0.94);
+    -webkit-backdrop-filter: saturate(180%) blur(16px);
+    backdrop-filter: saturate(180%) blur(16px);
+    border-top: 1px solid rgba(0, 27, 42, 0.08);
+    box-shadow: 0 -8px 24px -12px rgba(0, 27, 42, 0.18);
     display: flex;
     gap: 8px;
     flex-shrink: 0;
+    z-index: 30;
 }
 
 /* ─── DESKTOP ≥ 1024px ─────────────────────────────────────── */
