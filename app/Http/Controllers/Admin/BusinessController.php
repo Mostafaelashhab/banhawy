@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Business;
 use App\Models\BusinessType;
+use App\Services\WhatsAppSender;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -86,5 +87,46 @@ class BusinessController extends Controller
         $name = $business->name;
         $business->delete();
         return redirect()->route('admin.businesses.index')->with('flash', "تم حذف \"$name\" ✓");
+    }
+
+    /**
+     * Send a WhatsApp invite to a business asking them to register/claim ownership.
+     */
+    public function invite(Request $request, Business $business, WhatsAppSender $wa): RedirectResponse
+    {
+        $data = $request->validate([
+            'phone'   => 'nullable|string|max:30',
+            'message' => 'nullable|string|max:2000',
+        ]);
+
+        $phone = $data['phone'] ?? $business->whatsapp ?? $business->phone;
+        if (! $phone) {
+            return back()->with('flash_error', 'مفيش رقم تليفون لهذا النشاط — أضف رقم أولاً.');
+        }
+
+        $url = route('business.show', $business);
+        $defaultMsg = "السلام عليكم 👋\n\n"
+                    . "بنهاوي · دليل أنشطة بنها · أضاف نشاط \"{$business->name}\" على المنصة.\n\n"
+                    . "صفحة نشاطك:\n{$url}\n\n"
+                    . "لو أنت صاحب النشاط، تقدر تسجّل وتاخد ملكية الصفحة عشان تتحكم في:\n"
+                    . "• معلومات المتجر والمواعيد\n"
+                    . "• الصور والمنيو\n"
+                    . "• استقبال الطلبات والحجوزات\n"
+                    . "• الإشعارات والتقييمات\n\n"
+                    . "من الصفحة اضغط \"تقديم طلب ملكية\" — وهنراجع طلبك بسرعة.\n\n"
+                    . "تحياتنا · فريق بنهاوي";
+
+        $message = $data['message'] ?? $defaultMsg;
+
+        $ok = $wa->send($phone, $message);
+
+        if (! $ok) {
+            if (! config('services.waapi.enabled')) {
+                return back()->with('flash_warn', 'WAAPI متوقف. الرسالة لم تُرسل (وضع التطوير).');
+            }
+            return back()->with('flash_error', 'فشل إرسال الرسالة. تأكد من إعدادات WAAPI.');
+        }
+
+        return back()->with('flash', "اترسلت رسالة دعوة على واتساب لـ $phone ✓");
     }
 }

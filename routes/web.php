@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\Auth\PhoneVerificationController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\SignupController;
 use App\Http\Controllers\Public\AccountController;
@@ -105,6 +106,11 @@ Route::middleware('auth')->group(function () {
     // Visitor account page
     Route::get('/account', [AccountController::class, 'index'])->name('account');
 
+    // Phone (WhatsApp) verification — OTP via WAAPI
+    Route::get('/phone/verify',  [PhoneVerificationController::class, 'show'])->name('phone.show');
+    Route::post('/phone/send',   [PhoneVerificationController::class, 'send'])->middleware('throttle:6,60')->name('phone.send');
+    Route::post('/phone/verify', [PhoneVerificationController::class, 'verify'])->middleware('throttle:10,60')->name('phone.verify');
+
     // Web-push endpoints
     Route::post('/push/subscribe',   [\App\Http\Controllers\PushController::class, 'subscribe'])->name('push.subscribe');
     Route::post('/push/unsubscribe', [\App\Http\Controllers\PushController::class, 'unsubscribe'])->name('push.unsubscribe');
@@ -145,6 +151,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/businesses/{business}/edit',[\App\Http\Controllers\Admin\BusinessController::class, 'edit'])->name('businesses.edit');
         Route::patch('/businesses/{business}',   [\App\Http\Controllers\Admin\BusinessController::class, 'update'])->name('businesses.update');
         Route::post('/businesses/{business}/toggle',  [\App\Http\Controllers\Admin\BusinessController::class, 'toggle'])->name('businesses.toggle');
+        Route::post('/businesses/{business}/invite',  [\App\Http\Controllers\Admin\BusinessController::class, 'invite'])->name('businesses.invite');
         Route::delete('/businesses/{business}',  [\App\Http\Controllers\Admin\BusinessController::class, 'destroy'])->name('businesses.destroy');
 
         // Claims
