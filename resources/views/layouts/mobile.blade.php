@@ -12,9 +12,13 @@
     <title>@yield('title', 'بنهاوي · اكتشف بنها')</title>
 
     {{-- PWA --}}
-    <link rel="manifest" href="/manifest.json">
-    <link rel="icon" type="image/png" href="/favicon.png">
-    <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png">
+    @php
+        $iconVer = @file_get_contents(public_path('icons/.version')) ?: '1';
+    @endphp
+    <link rel="manifest" href="/manifest.json?v={{ $iconVer }}">
+    <link rel="icon" type="image/png" href="/favicon.png?v={{ $iconVer }}">
+    <link rel="shortcut icon" type="image/png" href="/favicon.png?v={{ $iconVer }}">
+    <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png?v={{ $iconVer }}">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="بنهاوي">

@@ -29,7 +29,17 @@ class GeneratePwaIcons extends Command
         $this->renderIcon($out . '/apple-touch-icon.png',  180, false);
         $this->renderIcon($out . '/favicon.png',           64,  false);
 
-        $this->info('PWA icons regenerated ✓ (' . $out . ')');
+        // Also overwrite the legacy root-level favicon that's wired into <head>
+        $publicRoot = dirname($out);                  // assumes $out lives under public/
+        $rootFav = $publicRoot . '/favicon.png';
+        $this->renderIcon($rootFav, 64, false);
+
+        // Touch a manifest cache-buster file so we can pin a query string to the manifest URLs
+        $version = (int) (microtime(true));
+        @file_put_contents($publicRoot . '/icons/.version', $version);
+
+        $this->info('PWA icons regenerated ✓ (' . $out . ' + ' . $rootFav . ')');
+        $this->info('Asset version: ' . $version);
         return self::SUCCESS;
     }
 

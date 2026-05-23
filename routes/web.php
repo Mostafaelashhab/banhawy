@@ -24,6 +24,32 @@ use App\Http\Controllers\Public\SplashController;
 use App\Http\Controllers\Public\TrackController;
 use Illuminate\Support\Facades\Route;
 
+// PWA manifest served dynamically so icon URLs always carry the current asset version
+Route::get('/manifest.json', function () {
+    $ver = @file_get_contents(public_path('icons/.version')) ?: '1';
+    $raw = (string) @file_get_contents(resource_path('manifest.json'));
+    $data = json_decode($raw, true) ?: [];
+
+    $bump = function (array $icons) use ($ver) {
+        return array_map(function ($icon) use ($ver) {
+            if (isset($icon['src']) && ! str_contains($icon['src'], '?v=')) {
+                $icon['src'] .= '?v=' . $ver;
+            }
+            return $icon;
+        }, $icons);
+    };
+    if (isset($data['icons'])) $data['icons'] = $bump($data['icons']);
+    if (isset($data['shortcuts'])) {
+        foreach ($data['shortcuts'] as &$s) {
+            if (isset($s['icons'])) $s['icons'] = $bump($s['icons']);
+        }
+    }
+
+    return response()->json($data, 200, [], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT)
+        ->header('Cache-Control', 'no-cache, must-revalidate')
+        ->header('Content-Type', 'application/manifest+json; charset=utf-8');
+});
+
 // ── Public ─────────────────────────────────────────────────────
 Route::get('/',         SplashController::class)->name('landing');
 Route::get('/discover', DiscoverController::class)->name('home');
