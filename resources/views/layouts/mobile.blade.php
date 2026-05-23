@@ -2,7 +2,11 @@
 <html lang="ar-EG" dir="rtl">
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover">
+    <style>
+        html, body { touch-action: pan-x pan-y; -ms-content-zooming: none; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+        input, select, textarea { font-size: 16px; }
+    </style>
     <meta name="theme-color" content="#001B2A">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'بنهاوي · اكتشف بنها')</title>
@@ -414,5 +418,37 @@
 </script>
 
 @stack('scripts')
+
+<script>
+(function () {
+    // iOS Safari: block pinch gestures
+    ['gesturestart', 'gesturechange', 'gestureend'].forEach(function (ev) {
+        document.addEventListener(ev, function (e) { e.preventDefault(); }, { passive: false });
+    });
+
+    // Block multi-touch pinch on touch events
+    document.addEventListener('touchmove', function (e) {
+        if (e.touches && e.touches.length > 1) e.preventDefault();
+    }, { passive: false });
+
+    // Block double-tap zoom
+    var lastTouchEnd = 0;
+    document.addEventListener('touchend', function (e) {
+        var now = Date.now();
+        if (now - lastTouchEnd <= 350) e.preventDefault();
+        lastTouchEnd = now;
+    }, { passive: false });
+
+    // Block Ctrl/⌘ + wheel zoom & Ctrl/⌘ + / - / 0 zoom on desktop
+    window.addEventListener('wheel', function (e) {
+        if (e.ctrlKey || e.metaKey) e.preventDefault();
+    }, { passive: false });
+    window.addEventListener('keydown', function (e) {
+        if ((e.ctrlKey || e.metaKey) && ['=', '+', '-', '_', '0'].indexOf(e.key) !== -1) {
+            e.preventDefault();
+        }
+    });
+})();
+</script>
 </body>
 </html>
