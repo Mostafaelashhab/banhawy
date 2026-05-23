@@ -14,7 +14,7 @@ class PlanSeeder extends Seeder
                 'slug'          => 'starter',
                 'name'          => 'Starter',
                 'tagline_ar'    => 'للبدايات',
-                'price_monthly' => 199,
+                'price_monthly' => 0,
                 'is_featured'   => false,
                 'features'      => [
                     'صفحة نشاط أساسية',
@@ -28,7 +28,7 @@ class PlanSeeder extends Seeder
                 'slug'          => 'pro',
                 'name'          => 'Pro',
                 'tagline_ar'    => 'للأنشطة النامية',
-                'price_monthly' => 399,
+                'price_monthly' => 0,
                 'is_featured'   => true,
                 'features'      => [
                     'كل مزايا Starter',
@@ -43,7 +43,7 @@ class PlanSeeder extends Seeder
                 'slug'          => 'business',
                 'name'          => 'Business',
                 'tagline_ar'    => 'لسلاسل المحلات',
-                'price_monthly' => 799,
+                'price_monthly' => 0,
                 'is_featured'   => false,
                 'features'      => [
                     'كل مزايا Pro',
