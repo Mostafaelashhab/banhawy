@@ -137,12 +137,15 @@ html { overflow-x: hidden; }
 
 /* ── Bottom nav (mobile) ────────────────────────────────────────── */
 .bnav {
-    background: white;
-    border-top: 1px solid var(--line);
+    background: rgba(255, 255, 255, 0.92);
+    -webkit-backdrop-filter: saturate(180%) blur(18px);
+    backdrop-filter: saturate(180%) blur(18px);
+    border-top: 1px solid rgba(0, 27, 42, 0.08);
+    box-shadow: 0 -8px 24px -12px rgba(0, 27, 42, 0.18);
     display: grid;
     grid-template-columns: repeat(5, 1fr);
     align-items: center;
-    padding: 6px 2px;
+    padding: 8px 6px 6px;
     padding-bottom: calc(6px + env(safe-area-inset-bottom));
     position: fixed;
     left: 0; right: 0;
@@ -155,15 +158,60 @@ html { overflow-x: hidden; }
     transform: translateY(calc(100% + env(safe-area-inset-bottom)));
 }
 
-/* Push page content above the fixed bnav so nothing hides behind it.
-   The shell adds this padding on every page that has a bnav. */
+/* Push page content above the fixed bnav so nothing hides behind it. */
 .shell:not(.is-landing) {
-    padding-bottom: calc(60px + env(safe-area-inset-bottom));
+    padding-bottom: calc(64px + env(safe-area-inset-bottom));
 }
-.bnav-item { display: flex; flex-direction: column; align-items: center; gap: 2px; color: var(--ink-4); font-size: 10px; font-weight: 700; min-width: 0; padding: 4px 2px; }
-.bnav-item span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.bnav-item {
+    position: relative;
+    isolation: isolate;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    color: var(--ink-4);
+    font-size: 10.5px;
+    font-weight: 700;
+    min-width: 0;
+    padding: 6px 2px 4px;
+    border-radius: 14px;
+    transition: color .18s ease, background .18s ease, transform .18s ease;
+    -webkit-tap-highlight-color: transparent;
+}
+.bnav-item:active { transform: scale(0.94); }
+.bnav-item span {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.bnav-item svg {
+    width: 22px;
+    height: 22px;
+    flex-shrink: 0;
+    transition: transform .18s ease;
+}
+
+/* Active state: teal pill behind the icon */
 .bnav-item.active { color: var(--teal); }
-.bnav-item svg { width: 20px; height: 20px; flex-shrink: 0; }
+.bnav-item.active svg {
+    transform: translateY(-1px);
+    filter: drop-shadow(0 2px 6px rgba(13, 148, 136, 0.35));
+}
+.bnav-item.active::before {
+    content: "";
+    position: absolute;
+    top: 2px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 38px;
+    height: 26px;
+    border-radius: 13px;
+    background: rgba(13, 148, 136, 0.12);
+    z-index: -1;
+}
 
 /* ── Misc atoms ─────────────────────────────────────────────────── */
 .muted { color: var(--ink-3); font-size: 12px; font-weight: 600; }
