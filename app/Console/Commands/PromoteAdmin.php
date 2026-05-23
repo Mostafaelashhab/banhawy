@@ -13,6 +13,7 @@ class PromoteAdmin extends Command
         {email : Email of the user to promote}
         {--create : Create the user if it does not exist}
         {--name= : Name (only used with --create)}
+        {--phone= : Phone number (only used with --create)}
         {--password= : Password (only used with --create, random if omitted)}';
 
     protected $description = 'Promote a user to super-admin (or create one).';
