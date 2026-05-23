@@ -14,6 +14,7 @@ use App\Http\Controllers\Merchant\QrController;
 use App\Http\Controllers\Merchant\SettingsController;
 use App\Http\Controllers\Public\BusinessController;
 use App\Http\Controllers\Public\ClaimController;
+use App\Http\Controllers\Public\ReportController;
 use App\Http\Controllers\Public\DiscoverController;
 use App\Http\Controllers\Public\MapController;
 use App\Http\Controllers\Public\BookingController as PublicBookingController;
@@ -47,6 +48,10 @@ Route::prefix('biz')->group(function () {
     Route::post('/{business:slug}/claim', [ClaimController::class, 'store'])
         ->middleware('throttle:6,60')
         ->name('business.claim');
+
+    Route::post('/{business:slug}/report', [ReportController::class, 'store'])
+        ->middleware('throttle:8,60')
+        ->name('business.report');
 });
 
 // ── Guest auth ─────────────────────────────────────────────────
@@ -103,5 +108,37 @@ Route::middleware('auth')->group(function () {
         Route::delete('/photos',           [MerchantPhotosController::class, 'destroy'])->name('photos.destroy');
         Route::post('/photos/cover',       [MerchantPhotosController::class, 'setCover'])->name('photos.cover');
         Route::post('/photos/logo',        [MerchantPhotosController::class, 'setLogo'])->name('photos.logo');
+    });
+
+    // ── Admin panel ─────────────────────────────────────────────
+    Route::prefix('admin')->name('admin.')->middleware('admin')->group(function () {
+        Route::get('/', \App\Http\Controllers\Admin\DashboardController::class)->name('dashboard');
+
+        // Businesses
+        Route::get('/businesses',                [\App\Http\Controllers\Admin\BusinessController::class, 'index'])->name('businesses.index');
+        Route::get('/businesses/{business}/edit',[\App\Http\Controllers\Admin\BusinessController::class, 'edit'])->name('businesses.edit');
+        Route::patch('/businesses/{business}',   [\App\Http\Controllers\Admin\BusinessController::class, 'update'])->name('businesses.update');
+        Route::post('/businesses/{business}/toggle',  [\App\Http\Controllers\Admin\BusinessController::class, 'toggle'])->name('businesses.toggle');
+        Route::delete('/businesses/{business}',  [\App\Http\Controllers\Admin\BusinessController::class, 'destroy'])->name('businesses.destroy');
+
+        // Claims
+        Route::get('/claims',                       [\App\Http\Controllers\Admin\ClaimController::class, 'index'])->name('claims.index');
+        Route::get('/claims/{claim}',               [\App\Http\Controllers\Admin\ClaimController::class, 'show'])->name('claims.show');
+        Route::post('/claims/{claim}/approve',      [\App\Http\Controllers\Admin\ClaimController::class, 'approve'])->name('claims.approve');
+        Route::post('/claims/{claim}/reject',       [\App\Http\Controllers\Admin\ClaimController::class, 'reject'])->name('claims.reject');
+
+        // Reports
+        Route::get('/reports',                      [\App\Http\Controllers\Admin\ReportController::class, 'index'])->name('reports.index');
+        Route::get('/reports/{report}',             [\App\Http\Controllers\Admin\ReportController::class, 'show'])->name('reports.show');
+        Route::patch('/reports/{report}',           [\App\Http\Controllers\Admin\ReportController::class, 'update'])->name('reports.update');
+
+        // Users
+        Route::get('/users',                        [\App\Http\Controllers\Admin\UserController::class, 'index'])->name('users.index');
+        Route::patch('/users/{user}/role',          [\App\Http\Controllers\Admin\UserController::class, 'updateRole'])->name('users.role');
+        Route::delete('/users/{user}',              [\App\Http\Controllers\Admin\UserController::class, 'destroy'])->name('users.destroy');
+
+        // Reviews
+        Route::get('/reviews',                      [\App\Http\Controllers\Admin\ReviewController::class, 'index'])->name('reviews.index');
+        Route::delete('/reviews/{review}',          [\App\Http\Controllers\Admin\ReviewController::class, 'destroy'])->name('reviews.destroy');
     });
 });

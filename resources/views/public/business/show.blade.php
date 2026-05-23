@@ -20,6 +20,38 @@
         ? route('business.book.form', $business)
         : route('business.whatsapp', ['business' => $business, 'message' => 'مرحبًا، حابب أحجز']);
 @endphp
+
+{{-- ── Flash toasts (claim + report feedback) ─────────────── --}}
+@php
+    $toast = null;
+    if (session('report_status') === 'submitted') {
+        $toast = ['type' => 'success', 'text' => 'شكراً لإبلاغك — هنراجع المعلومة قريب ✓'];
+    } elseif (session('report_status') === 'duplicate') {
+        $toast = ['type' => 'warn',    'text' => 'سبق إنك بلّغت عن هذا النشاط خلال اليوم.'];
+    } elseif (session('claim_status') === 'submitted') {
+        $toast = ['type' => 'success', 'text' => 'تم استلام طلب الملكية ✓ هنراجعه ونتواصل معاك قريب.'];
+    } elseif (session('claim_status') === 'already_owned') {
+        $toast = ['type' => 'warn',    'text' => 'هذا النشاط له مالك بالفعل.'];
+    }
+@endphp
+@if($toast)
+    <div class="biz-toast biz-toast-{{ $toast['type'] }}" role="status" id="biz-toast">
+        <span class="biz-toast-icon">
+            @if($toast['type'] === 'success')
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="20 6 9 17 4 12"/>
+                </svg>
+            @else
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="13"/><circle cx="12" cy="17" r="0.5" fill="currentColor"/>
+                </svg>
+            @endif
+        </span>
+        <span class="biz-toast-text">{{ $toast['text'] }}</span>
+        <button type="button" class="biz-toast-close" aria-label="إغلاق" onclick="this.parentNode.remove()">✕</button>
+    </div>
+@endif
+
 <div class="biz">
 
     {{-- ── HERO (cover + name) ─────────────────────────────── --}}
@@ -287,6 +319,69 @@
                     </form>
                 </dialog>
             @endif
+
+            {{-- ── REPORT BUTTON ─────────────────────────────── --}}
+            <div class="biz-report-row">
+                @if(session('report_status') === 'submitted')
+                    <span class="biz-report-thanks">شكراً لإبلاغك — هنراجع المعلومة قريب ✓</span>
+                @elseif(session('report_status') === 'duplicate')
+                    <span class="biz-report-thanks" style="color: #B45309;">سبق إنك بلّغت عن هذا النشاط خلال اليوم.</span>
+                @else
+                    <button type="button" id="report-open" class="biz-report-btn">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M4 22V4a3 3 0 0 1 3-3h11l-3 5 3 5H7"/>
+                            <line x1="4" y1="22" x2="4" y2="15"/>
+                        </svg>
+                        إبلاغ عن مشكلة في النشاط
+                    </button>
+                @endif
+            </div>
+
+            <dialog id="report-dialog" class="biz-claim-dialog" dir="rtl">
+                <button type="button" class="biz-claim-close" id="report-close" aria-label="إغلاق">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round">
+                        <line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/>
+                    </svg>
+                </button>
+
+                <div class="biz-claim-header" style="background: linear-gradient(135deg, rgba(220,38,38,.06), rgba(220,38,38,0));">
+                    <span class="biz-claim-badge" style="border-color: rgba(220,38,38,.20); box-shadow: 0 4px 12px -4px rgba(220,38,38,.30);">
+                        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#DC2626" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M4 22V4a3 3 0 0 1 3-3h11l-3 5 3 5H7"/>
+                            <line x1="4" y1="22" x2="4" y2="15"/>
+                        </svg>
+                    </span>
+                    <div>
+                        <div class="biz-claim-title">إبلاغ عن مشكلة</div>
+                        <div class="biz-claim-sub">{{ $business->name }}</div>
+                    </div>
+                </div>
+
+                <form method="post" action="{{ route('business.report', $business) }}" class="biz-claim-form">
+                    @csrf
+
+                    <label class="biz-claim-label">سبب البلاغ</label>
+                    <div class="report-reasons" id="report-reasons">
+                        @foreach(\App\Models\BusinessReport::REASONS as $key => $label)
+                            <label class="report-reason">
+                                <input type="radio" name="reason" value="{{ $key }}" required @if($loop->first) checked @endif>
+                                <span>{{ $label }}</span>
+                            </label>
+                        @endforeach
+                    </div>
+
+                    <label class="biz-claim-label" for="report_details">تفاصيل <span class="biz-claim-opt">(اختياري)</span></label>
+                    <textarea id="report_details" name="details" rows="3" maxlength="2000" class="biz-claim-input" placeholder="وضّحلنا المشكلة بالظبط…"></textarea>
+
+                    <label class="biz-claim-label" for="report_phone">رقمك للتواصل <span class="biz-claim-opt">(اختياري)</span></label>
+                    <input id="report_phone" name="reporter_phone" maxlength="30" inputmode="tel" class="biz-claim-input" autocomplete="tel" placeholder="01xxxxxxxxx" dir="ltr" style="text-align: right;">
+
+                    <button type="submit" class="btn biz-claim-submit" style="background: #DC2626; color: white;">
+                        إرسال البلاغ
+                    </button>
+                    <div class="biz-claim-note">بنراجع كل البلاغات يدوياً للحفاظ على جودة الدليل.</div>
+                </form>
+            </dialog>
 
             {{-- ── LIGHTBOX FOR GALLERY ──────────────────────── --}}
             @if($hasImages)
@@ -569,11 +664,20 @@
     border-radius: 20px;
     padding: 0;
     width: min(92vw, 440px);
-    max-height: 92dvh;
+    max-height: 90dvh;
     background: white;
     box-shadow: 0 30px 80px -10px rgba(0,27,42,.35), 0 8px 24px -8px rgba(0,27,42,.18);
     overflow: hidden;
     color: var(--ink-1);
+    /* Explicit centering — overrides any UA quirks under RTL */
+    position: fixed;
+    inset: 0;
+    margin: auto;
+    top: 50%;
+    left: 50%;
+    right: auto;
+    bottom: auto;
+    transform: translate(-50%, -50%);
 }
 .biz-claim-dialog::backdrop {
     background: rgba(0,27,42,.55);
@@ -581,13 +685,13 @@
     backdrop-filter: blur(6px);
 }
 
-/* Dialog opening animation */
+/* Dialog opening animation — preserves the centering translate */
 .biz-claim-dialog[open] {
     animation: claimIn .22s cubic-bezier(.2,.9,.3,1.2);
 }
 @keyframes claimIn {
-    from { transform: translateY(12px) scale(.96); opacity: 0; }
-    to   { transform: translateY(0)    scale(1);   opacity: 1; }
+    from { transform: translate(-50%, calc(-50% + 12px)) scale(.96); opacity: 0; }
+    to   { transform: translate(-50%, -50%)              scale(1);   opacity: 1; }
 }
 
 .biz-claim-header {
@@ -692,6 +796,126 @@ textarea.biz-claim-input { resize: vertical; min-height: 70px; line-height: 1.6;
     color: var(--ink-4);
     margin-top: 10px;
     font-weight: 600;
+}
+
+/* ── Toast notification (top of page) ───────────────────────── */
+.biz-toast {
+    position: fixed;
+    top: calc(16px + env(safe-area-inset-top));
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    border-radius: 16px;
+    background: white;
+    box-shadow: 0 20px 50px -12px rgba(0, 27, 42, 0.35),
+                0 6px 16px -6px rgba(0, 27, 42, 0.14);
+    z-index: 99999;
+    width: min(92vw, 440px);
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1.55;
+    animation: biztoastIn .35s cubic-bezier(.2,.9,.3,1.3);
+}
+@keyframes biztoastIn {
+    0%   { opacity: 0; transform: translate(-50%, -20px) scale(.9); }
+    60%  { opacity: 1; transform: translate(-50%, 4px)  scale(1.03); }
+    100% { opacity: 1; transform: translate(-50%, 0)    scale(1); }
+}
+.biz-toast-success { color: #047857; border-right: 4px solid #10B981; }
+.biz-toast-warn    { color: #92400E; border-right: 4px solid #F59E0B; }
+.biz-toast-icon {
+    flex-shrink: 0;
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+}
+.biz-toast-success .biz-toast-icon { background: rgba(16,185,129,.12); color: #047857; }
+.biz-toast-warn    .biz-toast-icon { background: rgba(245,158,11,.14); color: #B45309; }
+.biz-toast-text {
+    flex: 1;
+    min-width: 0;
+    color: var(--ink-1);
+}
+.biz-toast-close {
+    background: transparent;
+    border: none;
+    color: var(--ink-4);
+    font-size: 16px;
+    cursor: pointer;
+    padding: 4px 6px;
+    border-radius: 6px;
+    flex-shrink: 0;
+}
+.biz-toast-close:hover { background: rgba(0,27,42,.06); }
+
+.biz-toast.is-hiding {
+    animation: biztoastOut .25s ease forwards;
+}
+@keyframes biztoastOut {
+    to { opacity: 0; transform: translate(-50%, -16px) scale(.95); }
+}
+
+/* ── Report button + reasons ─────────────────────────────────── */
+.biz-report-row {
+    text-align: center;
+    margin-top: 14px;
+    padding: 4px;
+}
+.biz-report-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: transparent;
+    border: none;
+    color: var(--ink-4);
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 8px 12px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: color .15s ease, background .15s ease;
+    -webkit-tap-highlight-color: transparent;
+}
+.biz-report-btn:hover {
+    color: #DC2626;
+    background: rgba(220,38,38,.06);
+}
+.biz-report-btn:active { transform: scale(0.97); }
+.biz-report-thanks {
+    display: inline-block;
+    color: var(--teal);
+    font-size: 12.5px;
+    font-weight: 800;
+    padding: 8px 12px;
+}
+
+.report-reasons {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 4px;
+}
+.report-reason {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border: 1px solid rgba(0,27,42,.12);
+    border-radius: 10px;
+    background: #FAFBFC;
+    cursor: pointer;
+    transition: background .15s ease, border-color .15s ease;
+}
+.report-reason input { accent-color: #DC2626; flex-shrink: 0; }
+.report-reason span { font-size: 13px; font-weight: 700; color: var(--ink-1); }
+.report-reason:has(input:checked) {
+    border-color: #DC2626;
+    background: rgba(220,38,38,.05);
 }
 
 .biz-mini-map {
@@ -865,29 +1089,45 @@ textarea.biz-claim-input { resize: vertical; min-height: 70px; line-height: 1.6;
     });
 })();
 
-// Claim dialog
+// Generic modal dialog binder (claim + report share the same UX)
 (function () {
-    var dlg = document.getElementById('claim-dialog');
-    var openBtn = document.getElementById('claim-open');
-    var closeBtn = document.getElementById('claim-close');
-    if (!dlg || !openBtn) return;
+    function bind(dlgId, openId, closeId) {
+        var dlg = document.getElementById(dlgId);
+        var openBtn = document.getElementById(openId);
+        var closeBtn = document.getElementById(closeId);
+        if (!dlg || !openBtn) return;
 
-    openBtn.addEventListener('click', function () {
-        if (typeof dlg.showModal === 'function') dlg.showModal();
-        else dlg.setAttribute('open', '');
-    });
-    if (closeBtn) {
-        closeBtn.addEventListener('click', function () {
-            if (typeof dlg.close === 'function') dlg.close();
-            else dlg.removeAttribute('open');
+        openBtn.addEventListener('click', function () {
+            if (typeof dlg.showModal === 'function') dlg.showModal();
+            else dlg.setAttribute('open', '');
+        });
+        if (closeBtn) {
+            closeBtn.addEventListener('click', function () {
+                if (typeof dlg.close === 'function') dlg.close();
+                else dlg.removeAttribute('open');
+            });
+        }
+        dlg.addEventListener('click', function (e) {
+            var rect = dlg.getBoundingClientRect();
+            var inside = e.clientX >= rect.left && e.clientX <= rect.right
+                      && e.clientY >= rect.top && e.clientY <= rect.bottom;
+            if (!inside) dlg.close();
         });
     }
-    dlg.addEventListener('click', function (e) {
-        var rect = dlg.getBoundingClientRect();
-        var inside = e.clientX >= rect.left && e.clientX <= rect.right
-                  && e.clientY >= rect.top && e.clientY <= rect.bottom;
-        if (!inside) dlg.close();
-    });
+    bind('claim-dialog',  'claim-open',  'claim-close');
+    bind('report-dialog', 'report-open', 'report-close');
+})();
+
+// Auto-dismiss flash toast after 6s
+(function () {
+    var t = document.getElementById('biz-toast');
+    if (!t) return;
+    // Also log to console for debugging
+    console.log('[banhawy] showing toast:', t.querySelector('.biz-toast-text')?.textContent);
+    setTimeout(function () {
+        t.classList.add('is-hiding');
+        setTimeout(function () { t.remove(); }, 280);
+    }, 6000);
 })();
 
 // Reviews "show all"
