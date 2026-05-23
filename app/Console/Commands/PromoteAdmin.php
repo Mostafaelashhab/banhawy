@@ -33,12 +33,14 @@ class PromoteAdmin extends Command
             $user = User::create([
                 'name'     => $this->option('name') ?: explode('@', $email)[0],
                 'email'    => $email,
+                'phone'    => $this->option('phone') ?: null,
                 'password' => Hash::make($password),
                 'role'     => 'admin',
             ]);
 
             $this->info("Admin user created.");
             $this->line("  email:    $email");
+            $this->line("  phone:    " . $user->phone);
             $this->line("  password: $password");
             return self::SUCCESS;
         }
