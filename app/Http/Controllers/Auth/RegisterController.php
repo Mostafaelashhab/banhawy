@@ -140,6 +140,18 @@ class RegisterController extends Controller
 
         session()->forget(['register.business_type_id', 'register.business']);
 
+        // Notify admins of the new business
+        try {
+            app(\App\Services\PushSender::class)->toAdmins([
+                'title' => 'متجر جديد انضم · بنهاوي',
+                'body'  => $business->name . ' (' . ($business->type?->name_ar ?? '—') . ')',
+                'url'   => route('admin.businesses.edit', $business),
+                'tag'   => 'admin-biz-' . $business->id,
+            ]);
+        } catch (\Throwable $e) {
+            \Log::warning('[push admins biz] '.$e->getMessage());
+        }
+
         return redirect()->route('register.success', $business);
     }
 

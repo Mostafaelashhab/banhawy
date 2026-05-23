@@ -36,11 +36,7 @@
     {{-- ── Sidebar (desktop ≥ 1024px) ───────────────────────────── --}}
     <aside class="sidebar" aria-label="التنقّل">
         <a href="{{ route('home') }}" class="brand">
-            <span class="brand-mark">
-                <svg viewBox="0 0 24 24" width="22" height="22" fill="white">
-                    <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5z"/>
-                </svg>
-            </span>
+            <img src="/icons/banhawy-mark.svg" alt="" width="38" height="38" class="brand-mark" style="padding: 0; background: transparent; box-shadow: 0 6px 14px -4px rgba(13,148,136,.45);">
             <span class="brand-text">
                 <span class="brand-name">بنهاوي</span>
                 <span class="brand-sub">دليل أنشطة بنها</span>

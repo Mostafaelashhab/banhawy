@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Public;
 use App\Http\Controllers\Controller;
 use App\Models\Business;
 use App\Models\BusinessClaim;
+use App\Services\PushSender;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
@@ -26,7 +27,7 @@ class ClaimController extends Controller
 
         $data['claimant_phone'] = preg_replace('/[^\d+]/', '', $data['claimant_phone']);
 
-        BusinessClaim::create([
+        $claim = BusinessClaim::create([
             'business_id'    => $business->id,
             'user_id'        => $request->user()?->id,
             'claimant_name'  => $data['claimant_name'],
@@ -35,6 +36,18 @@ class ClaimController extends Controller
             'message'        => $data['message'] ?? null,
             'status'         => 'pending',
         ]);
+
+        // Notify all admins
+        try {
+            app(PushSender::class)->toAdmins([
+                'title' => 'طلب ملكية جديد · بنهاوي',
+                'body'  => $data['claimant_name'] . ' يطلب ملكية: ' . $business->name,
+                'url'   => route('admin.claims.show', $claim),
+                'tag'   => 'admin-claim-' . $claim->id,
+            ]);
+        } catch (\Throwable $e) {
+            \Log::warning('[push admins claim] '.$e->getMessage());
+        }
 
         return back()->with('claim_status', 'submitted');
     }

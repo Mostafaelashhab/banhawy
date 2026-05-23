@@ -298,13 +298,13 @@
 
 <div class="a-app">
     <aside class="a-side" id="a-side">
-        <div class="a-brand">
-            <span class="a-brand-mark">ب</span>
+        <a href="{{ route('admin.dashboard') }}" class="a-brand" style="text-decoration: none; color: inherit;">
+            <img src="/icons/banhawy-mark.svg" alt="بنهاوي" width="38" height="38" class="a-brand-mark" style="background: transparent; box-shadow: 0 6px 14px -4px rgba(13,148,136,.5); padding: 0;">
             <div>
                 <div class="a-brand-text">بنهاوي</div>
                 <div class="a-brand-sub">لوحة التحكم</div>
             </div>
-        </div>
+        </a>
 
         <div class="a-nav-section">عام</div>
         <a href="{{ route('admin.dashboard') }}" class="a-link @if($route === 'admin.dashboard') is-active @endif">

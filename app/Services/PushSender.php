@@ -33,6 +33,25 @@ class PushSender
         return $this->toSubscriptions($user->pushSubscriptions, $payload);
     }
 
+    /**
+     * Broadcast a payload to every admin user that has push subscriptions.
+     * Returns the total number of subscriptions the push was queued for.
+     */
+    public function toAdmins(array $payload): int
+    {
+        $subs = PushSubscription::whereHas('user', fn ($q) => $q->where('role', 'admin'))->get();
+        return $this->toSubscriptions($subs, $payload);
+    }
+
+    /**
+     * Send to many users at once.
+     */
+    public function toUsers(Collection $users, array $payload): int
+    {
+        $subs = PushSubscription::whereIn('user_id', $users->pluck('id'))->get();
+        return $this->toSubscriptions($subs, $payload);
+    }
+
     public function toSubscriptions(Collection $subs, array $payload): int
     {
         $count = 0;

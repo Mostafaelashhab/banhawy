@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Public;
 use App\Http\Controllers\Controller;
 use App\Models\Business;
 use App\Models\BusinessReport;
+use App\Services\PushSender;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -32,7 +33,7 @@ class ReportController extends Controller
             return back()->with('report_status', 'duplicate');
         }
 
-        BusinessReport::create([
+        $report = BusinessReport::create([
             'business_id'    => $business->id,
             'user_id'        => $request->user()?->id,
             'reason'         => $data['reason'],
@@ -42,6 +43,19 @@ class ReportController extends Controller
             'ip_hash'        => $ipHash,
             'status'         => 'pending',
         ]);
+
+        // Notify all admins
+        try {
+            $reasonLabel = BusinessReport::REASONS[$data['reason']] ?? $data['reason'];
+            app(PushSender::class)->toAdmins([
+                'title' => 'بلاغ جديد · بنهاوي',
+                'body'  => $reasonLabel . ' — ' . $business->name,
+                'url'   => route('admin.reports.show', $report),
+                'tag'   => 'admin-report-' . $report->id,
+            ]);
+        } catch (\Throwable $e) {
+            \Log::warning('[push admins report] '.$e->getMessage());
+        }
 
         return back()->with('report_status', 'submitted');
     }
