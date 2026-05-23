@@ -72,10 +72,73 @@
             @endif
         </div>
     @empty
-        <div class="card card-pad" style="text-align: center; padding: 32px 16px; color: var(--ink-3); grid-column: 1 / -1;">
-            <div style="margin-bottom: 8px; color: var(--ink-4);"><x-icon name="cart" :size="32"/></div>
-            <div class="label-strong">لا توجد طلبات في هذه القائمة</div>
+        @php
+            $emptyCopy = [
+                'new'       => ['title' => 'مفيش طلبات جديدة دلوقتي', 'sub' => 'أول ما عميل يطلب من متجرك هيوصلك هنا.'],
+                'preparing' => ['title' => 'مفيش طلبات قيد التنفيذ',   'sub' => 'الطلبات اللي بتقبلها هتظهر هنا.'],
+                'completed' => ['title' => 'لسه مفيش طلبات مكتملة',    'sub' => 'الطلبات اللي خلصتها هتتجمع هنا تلقائياً.'],
+                'cancelled' => ['title' => 'مفيش طلبات ملغية',          'sub' => 'كله تمام · مفيش طلبات اترفضت.'],
+            ];
+            $copy = $emptyCopy[$status] ?? $emptyCopy['new'];
+        @endphp
+        <div class="orders-empty">
+            <div class="orders-empty-illu">
+                <svg viewBox="0 0 96 96" width="96" height="96" fill="none" stroke="#0D9488" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <rect x="14" y="22" width="68" height="58" rx="10" fill="rgba(13,148,136,.06)"/>
+                    <path d="M22 32h8l6 26h28l6-20H32"/>
+                    <circle cx="38" cy="68" r="3.5" fill="#0D9488" stroke="none"/>
+                    <circle cx="62" cy="68" r="3.5" fill="#0D9488" stroke="none"/>
+                </svg>
+            </div>
+            <div class="orders-empty-title">{{ $copy['title'] }}</div>
+            <p class="orders-empty-sub">{{ $copy['sub'] }}</p>
+
+            @if($status === 'new')
+                <div class="orders-empty-actions">
+                    <a href="{{ route('merchant.qr') }}" class="btn btn-teal" style="padding: 11px; font-size: 13px; flex: 1;">
+                        <x-icon name="share" :size="14" stroke="white"/> شارك متجرك
+                    </a>
+                    <a href="{{ route('business.show', $business) }}" target="_blank" class="btn btn-line" style="padding: 11px; font-size: 13px; flex: 1;">
+                        <x-icon name="eye" :size="14"/> عرض المتجر
+                    </a>
+                </div>
+            @endif
         </div>
+
+        <style>
+        .orders-empty {
+            grid-column: 1 / -1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            padding: 28px 18px 24px;
+        }
+        .orders-empty-illu {
+            margin-bottom: 14px;
+            animation: ordersEmptyFloat 4s ease-in-out infinite;
+        }
+        @keyframes ordersEmptyFloat {
+            0%, 100% { transform: translateY(0); }
+            50%      { transform: translateY(-6px); }
+        }
+        .orders-empty-title { font-weight: 900; font-size: 17px; color: var(--ink-1); }
+        .orders-empty-sub {
+            color: var(--ink-3);
+            font-size: 13px;
+            line-height: 1.7;
+            margin: 6px 0 0;
+            max-width: 320px;
+            font-weight: 600;
+        }
+        .orders-empty-actions {
+            display: flex;
+            gap: 8px;
+            width: 100%;
+            max-width: 340px;
+            margin-top: 18px;
+        }
+        </style>
     @endforelse
     </div>
 </div>

@@ -114,7 +114,24 @@
             <div style="flex: 1; font-size: 12px; font-weight: 700;">رمز QR للمتجر</div>
             <span style="color: var(--ink-4);"><x-icon name="chev-l" :size="14"/></span>
         </a>
-        <a href="{{ route('business.show', $business) }}" target="_blank" class="card" style="padding: 10px 12px; display: flex; align-items: center; gap: 10px;">
+        <a href="{{ route('merchant.photos') }}" class="card" style="padding: 10px 12px; display: flex; align-items: center; gap: 10px;">
+            <span style="color: var(--teal); background: var(--teal-50, rgba(13,148,136,.1)); width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center;">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>
+                </svg>
+            </span> 
+            <div style="flex: 1; font-size: 12px; font-weight: 700;">
+                صور المتجر والمنيو
+                @php $imgCount = is_array($business->images) ? count($business->images) : 0; @endphp
+                @if($imgCount === 0)
+                    <span style="color: #B45309; background: #FEF3C7; padding: 1px 6px; border-radius: 6px; font-size: 10px; font-weight: 800; margin-right: 4px;">جديد</span>
+                @else
+                    <span style="color: var(--ink-4); font-size: 10px; font-weight: 700; margin-right: 4px;">({{ $imgCount }})</span>
+                @endif
+            </div>
+            <span style="color: var(--ink-4);"><x-icon name="chev-l" :size="14"/></span>
+        </a>
+        <a href="{{ route('business.show', $business) }}"  class="card" style="padding: 10px 12px; display: flex; align-items: center; gap: 10px;">
             <span style="color: var(--navy); background: var(--gray-100); width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center;"><x-icon name="eye" :size="14"/></span>
             <div style="flex: 1; font-size: 12px; font-weight: 700;">عرض صفحة المتجر</div>
             <span style="color: var(--ink-4);"><x-icon name="chev-l" :size="14"/></span>

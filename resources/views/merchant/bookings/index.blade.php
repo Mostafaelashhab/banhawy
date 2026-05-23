@@ -82,10 +82,66 @@
             </div>
         </div>
     @empty
-        <div class="card card-pad" style="text-align: center; padding: 32px 16px; color: var(--ink-3);">
-            <div style="margin-bottom: 8px; color: var(--ink-4);"><x-icon name="calendar" :size="32"/></div>
-            <div class="label-strong">لا توجد حجوزات في هذا اليوم</div>
+        <div class="bookings-empty">
+            <div class="bookings-empty-illu">
+                <svg viewBox="0 0 96 96" width="96" height="96" fill="none" stroke="#0D9488" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <rect x="14" y="20" width="68" height="62" rx="10" fill="rgba(13,148,136,.06)"/>
+                    <line x1="14" y1="38" x2="82" y2="38"/>
+                    <line x1="32" y1="14" x2="32" y2="26"/>
+                    <line x1="64" y1="14" x2="64" y2="26"/>
+                    <circle cx="32" cy="54" r="3" fill="#0D9488" stroke="none"/>
+                    <circle cx="48" cy="54" r="3" fill="#0D9488" stroke="none"/>
+                    <circle cx="64" cy="54" r="3" fill="#0D9488" stroke="none"/>
+                    <circle cx="32" cy="68" r="3" fill="#0D9488" stroke="none"/>
+                    <circle cx="48" cy="68" r="3" fill="#0D9488" stroke="none"/>
+                </svg>
+            </div>
+            <div class="bookings-empty-title">مفيش حجوزات في اليوم ده</div>
+            <p class="bookings-empty-sub">لما عميل يحجز معاد جديد هيظهر هنا تلقائياً.</p>
+
+            <div class="bookings-empty-actions">
+                <a href="{{ route('merchant.qr') }}" class="btn btn-teal" style="padding: 11px; font-size: 13px; flex: 1;">
+                    <x-icon name="share" :size="14" stroke="white"/> شارك متجرك
+                </a>
+                <a href="{{ route('business.show', $business) }}" target="_blank" class="btn btn-line" style="padding: 11px; font-size: 13px; flex: 1;">
+                    <x-icon name="eye" :size="14"/> عرض المتجر
+                </a>
+            </div>
         </div>
+
+        <style>
+        .bookings-empty {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            padding: 28px 18px 24px;
+        }
+        .bookings-empty-illu {
+            margin-bottom: 14px;
+            animation: bookingsEmptyFloat 4s ease-in-out infinite;
+        }
+        @keyframes bookingsEmptyFloat {
+            0%, 100% { transform: translateY(0); }
+            50%      { transform: translateY(-6px); }
+        }
+        .bookings-empty-title { font-weight: 900; font-size: 17px; color: var(--ink-1); }
+        .bookings-empty-sub {
+            color: var(--ink-3);
+            font-size: 13px;
+            line-height: 1.7;
+            margin: 6px 0 0;
+            max-width: 320px;
+            font-weight: 600;
+        }
+        .bookings-empty-actions {
+            display: flex;
+            gap: 8px;
+            width: 100%;
+            max-width: 340px;
+            margin-top: 18px;
+        }
+        </style>
     @endforelse
 </div>
 

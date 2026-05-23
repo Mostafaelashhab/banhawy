@@ -8,7 +8,7 @@
  * Push: handles push events + notification clicks
  * ──────────────────────────────────────────────────────────── */
 
-const CACHE_VERSION = 'banhawy-v1.0.0';
+const CACHE_VERSION = 'banhawy-v1.0.1';
 const SHELL_CACHE   = `${CACHE_VERSION}-shell`;
 const PAGES_CACHE   = `${CACHE_VERSION}-pages`;
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
@@ -98,15 +98,31 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
-    // Cross-origin (e.g. tiles, fonts CDN): stale-while-revalidate
+    // Cross-origin: only intercept whitelisted CDNs (tiles, fonts, libs).
+    // Everything else passes through to the network untouched.
+    const WHITELIST = [
+        'tile.openstreetmap.org',
+        'fonts.googleapis.com',
+        'fonts.gstatic.com',
+        'unpkg.com',
+        'cdn.jsdelivr.net',
+    ];
+    if (!WHITELIST.some((host) => url.hostname.endsWith(host))) {
+        return; // let the browser handle it natively
+    }
+
     event.respondWith(
         caches.open(RUNTIME_CACHE).then(async (cache) => {
             const cached = await cache.match(req);
-            const network = fetch(req).then((res) => {
+            try {
+                const res = await fetch(req);
                 if (res && res.status === 200) cache.put(req, res.clone()).catch(() => {});
                 return res;
-            }).catch(() => cached);
-            return cached || network;
+            } catch (err) {
+                if (cached) return cached;
+                // Last resort: return an empty 504 so respondWith() never resolves to undefined
+                return new Response('', { status: 504, statusText: 'Offline' });
+            }
         })
     );
 });

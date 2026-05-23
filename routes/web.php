@@ -9,9 +9,11 @@ use App\Http\Controllers\Merchant\AnalyticsController;
 use App\Http\Controllers\Merchant\BookingController as MerchantBookingController;
 use App\Http\Controllers\Merchant\DashboardController;
 use App\Http\Controllers\Merchant\OrderController as MerchantOrderController;
+use App\Http\Controllers\Merchant\PhotosController as MerchantPhotosController;
 use App\Http\Controllers\Merchant\QrController;
 use App\Http\Controllers\Merchant\SettingsController;
 use App\Http\Controllers\Public\BusinessController;
+use App\Http\Controllers\Public\ClaimController;
 use App\Http\Controllers\Public\DiscoverController;
 use App\Http\Controllers\Public\MapController;
 use App\Http\Controllers\Public\BookingController as PublicBookingController;
@@ -41,6 +43,10 @@ Route::prefix('biz')->group(function () {
     Route::get('/{business:slug}/book',           [PublicBookingController::class, 'form'])->name('business.book.form');
     Route::post('/{business:slug}/book',          [PublicBookingController::class, 'store'])->name('business.book.store');
     Route::get('/{business:slug}/book/{booking}/success', [PublicBookingController::class, 'success'])->name('business.book.success');
+
+    Route::post('/{business:slug}/claim', [ClaimController::class, 'store'])
+        ->middleware('throttle:6,60')
+        ->name('business.claim');
 });
 
 // ── Guest auth ─────────────────────────────────────────────────
@@ -91,5 +97,11 @@ Route::middleware('auth')->group(function () {
         Route::get('/qr',                  QrController::class)->name('qr');
         Route::get('/settings',            [SettingsController::class, 'index'])->name('settings');
         Route::patch('/settings',          [SettingsController::class, 'update'])->name('settings.update');
+
+        Route::get('/photos',              [MerchantPhotosController::class, 'index'])->name('photos');
+        Route::post('/photos',             [MerchantPhotosController::class, 'store'])->name('photos.store');
+        Route::delete('/photos',           [MerchantPhotosController::class, 'destroy'])->name('photos.destroy');
+        Route::post('/photos/cover',       [MerchantPhotosController::class, 'setCover'])->name('photos.cover');
+        Route::post('/photos/logo',        [MerchantPhotosController::class, 'setLogo'])->name('photos.logo');
     });
 });

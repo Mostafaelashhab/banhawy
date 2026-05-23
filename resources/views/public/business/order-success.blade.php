@@ -2,6 +2,7 @@
 
 @section('title', 'تم إرسال طلبك · ' . $business->name)
 @section('page-title', 'تم إرسال الطلب')
+@section('shell-class', 'no-bnav')
 @section('screen-class', 'bg-gray')
 
 @section('content')

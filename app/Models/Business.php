@@ -12,10 +12,10 @@ class Business extends Model
 {
     protected $fillable = [
         'owner_id', 'business_type_id', 'plan_id',
-        'name', 'slug', 'category', 'description',
+        'name', 'slug', 'firebase_id', 'category', 'description',
         'whatsapp', 'phone', 'email',
         'address', 'lat', 'lng',
-        'logo', 'cover',
+        'logo', 'cover', 'images',
         'price_range', 'delivery',
         'orders_via', 'bookings_via',
         'is_active', 'is_verified', 'is_featured',
@@ -31,6 +31,7 @@ class Business extends Model
 
     protected $casts = [
         'hours'        => 'array',
+        'images'       => 'array',
         'lat'          => 'decimal:7',
         'lng'          => 'decimal:7',
         'rating'       => 'decimal:2',

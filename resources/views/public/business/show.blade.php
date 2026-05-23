@@ -2,6 +2,7 @@
 
 @section('title', $business->name . ' · بنهاوي')
 @section('page-title', $business->name)
+@section('shell-class', 'no-bnav')
 
 @section('content')
 @php
@@ -96,12 +97,22 @@
     </div>
 
     {{-- ── TABS ─────────────────────────────────────────────── --}}
+    @php
+        $hasImages  = is_array($business->images) && count($business->images) > 0;
+        $reviewsAll = $business->reviews->sortByDesc('created_at');
+        $reviewsCount = $reviewsAll->count();
+    @endphp
     <div class="biz-tabs">
-        <span class="biz-tab is-active">الرئيسية</span>
+        <a href="#" class="biz-tab is-active" onclick="event.preventDefault(); window.scrollTo({top:0,behavior:'smooth'})">الرئيسية</a>
         @if($hasMenu)
             <a href="{{ route('business.menu', $business) }}" class="biz-tab">{{ $menuLabel }}</a>
         @endif
-        <span class="biz-tab">التقييمات</span>
+        @if($hasImages)
+            <a href="#biz-gallery" class="biz-tab" data-gallery-tab hidden>الصور</a>
+        @endif
+        <a href="#biz-reviews" class="biz-tab">
+            التقييمات @if($reviewsCount) <span style="color: var(--ink-4); font-weight: 700;">({{ $reviewsCount }})</span> @endif
+        </a>
     </div>
 
     {{-- ── BODY (mobile single column, desktop 2-column) ───── --}}
@@ -128,6 +139,160 @@
                 <div class="card card-pad" style="margin-top: 14px;">
                     <div class="label-strong" style="margin-bottom: 6px;">عن النشاط</div>
                     <p class="muted" style="line-height: 1.75;">{{ $business->description }}</p>
+                </div>
+            @endif
+
+            {{-- ── IMAGES GALLERY ─────────────────────────────── --}}
+            @if($hasImages)
+                <div id="biz-gallery" class="card card-pad" style="margin-top: 14px; scroll-margin-top: 80px;" hidden data-gallery>
+                    <div class="label-strong" style="margin-bottom: 10px;">الصور والمنيو</div>
+                    <div class="biz-gallery">
+                        @foreach($business->images as $i => $img)
+                            <button type="button" class="biz-gallery-item" data-img="{{ $img }}" aria-label="صورة {{ $i + 1 }}" hidden>
+                                <img src="{{ $img }}" alt="صورة {{ $i + 1 }}" loading="lazy" referrerpolicy="no-referrer"
+                                     onload="this.closest('.biz-gallery-item').hidden=false; var g=this.closest('[data-gallery]'); g.hidden=false; var t=document.querySelector('[data-gallery-tab]'); if(t) t.hidden=false"
+                                     onerror="this.closest('.biz-gallery-item').remove()">
+                            </button>
+                        @endforeach
+                    </div>
+                </div>
+            @endif
+
+            {{-- ── REVIEWS ────────────────────────────────────── --}}
+            <div id="biz-reviews" class="card card-pad" style="margin-top: 14px; scroll-margin-top: 80px;">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
+                    <div class="label-strong">التقييمات @if($reviewsCount) <span style="color: var(--ink-4); font-weight: 700;">({{ $reviewsCount }})</span> @endif</div>
+                    @if($business->rating > 0)
+                        <span class="stars" style="font-size: 13px;">
+                            <x-icon name="star-f" :size="14"/> {{ number_format($business->rating, 1) }}
+                        </span>
+                    @endif
+                </div>
+
+                @if($reviewsCount === 0)
+                    <p class="muted" style="text-align: center; padding: 16px 0;">لا توجد تقييمات بعد — كن أول من يضيف رأيه.</p>
+                @else
+                    @php $showAll = request()->boolean('all_reviews'); @endphp
+                    <div class="biz-reviews-list">
+                        @foreach(($showAll ? $reviewsAll : $reviewsAll->take(10)) as $r)
+                            <div class="biz-review">
+                                <div class="biz-review-head">
+                                    <div class="biz-review-avatar">
+                                        {{ mb_substr($r->reviewer_name ?? 'ز', 0, 1) }}
+                                    </div>
+                                    <div style="flex: 1; min-width: 0;">
+                                        <div style="font-weight: 800; font-size: 13px;">
+                                            {{ $r->reviewer_name ?? 'زائر' }}
+                                            @if($r->reviewer_phone)
+                                                <span style="color: var(--ink-4); font-weight: 600; font-size: 11px; direction: ltr;">
+                                                    · {{ '****'.substr($r->reviewer_phone, -4) }}
+                                                </span>
+                                            @endif
+                                        </div>
+                                        <div class="label-meta">{{ $r->created_at?->translatedFormat('d M Y') }}</div>
+                                    </div>
+                                    <div class="biz-review-rating">
+                                        @for($s = 1; $s <= 5; $s++)
+                                            <x-icon name="star-f" :size="12" stroke="{{ $s <= $r->rating ? '#F59E0B' : '#D9DDE3' }}"/>
+                                        @endfor
+                                    </div>
+                                </div>
+                                @if($r->body)
+                                    <p class="biz-review-body">{{ $r->body }}</p>
+                                @endif
+                                @if(is_array($r->replies) && count($r->replies))
+                                    <div class="biz-review-replies">
+                                        @foreach($r->replies as $rep)
+                                            @if(!empty($rep['body']))
+                                                <div class="biz-review-reply">
+                                                    <div class="label-meta" style="margin-bottom: 2px;">رد — {{ $rep['date'] ?? '' }}</div>
+                                                    <p style="margin: 0;">{{ $rep['body'] }}</p>
+                                                </div>
+                                            @endif
+                                        @endforeach
+                                    </div>
+                                @endif
+                            </div>
+                        @endforeach
+                    </div>
+
+                    @if($reviewsCount > 10 && ! $showAll)
+                        <div style="text-align: center; margin-top: 10px;">
+                            <button type="button" class="btn btn-line" id="reviews-show-more" style="padding: 8px 16px; font-size: 12px;">
+                                عرض الكل ({{ $reviewsCount }})
+                            </button>
+                        </div>
+                    @endif
+                @endif
+            </div>
+
+            {{-- ── CLAIM OWNERSHIP ───────────────────────────── --}}
+            @if(! $business->owner_id)
+                <div class="card card-pad biz-claim-card" style="margin-top: 14px;">
+                    @if(session('claim_status') === 'submitted')
+                        <div class="label-strong" style="color: var(--teal);">تم استلام طلبك ✓</div>
+                        <p class="muted" style="margin-top: 6px; line-height: 1.7;">هنراجع الطلب ونتواصل معاك خلال أيام قليلة.</p>
+                    @else
+                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+                            <span style="width: 36px; height: 36px; border-radius: 12px; background: var(--teal-50); display: grid; place-items: center; color: var(--teal); flex-shrink: 0;">
+                                <x-icon name="lock" :size="18" stroke="#0D9488"/>
+                            </span>
+                            <div>
+                                <div class="label-strong">أنت صاحب هذا النشاط؟</div>
+                                <div class="label-meta" style="margin-top: 2px;">قدّم طلب ملكية وهنراجعه ونتواصل معاك.</div>
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-navy" style="width: 100%; padding: 11px; font-size: 13px;" id="claim-open">
+                            تقديم طلب ملكية
+                        </button>
+                    @endif
+                </div>
+
+                <dialog id="claim-dialog" class="biz-claim-dialog" dir="rtl">
+                    <button type="button" class="biz-claim-close" id="claim-close" aria-label="إغلاق">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round">
+                            <line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/>
+                        </svg>
+                    </button>
+
+                    <div class="biz-claim-header">
+                        <span class="biz-claim-badge">
+                            <x-icon name="lock" :size="20" stroke="#0D9488"/>
+                        </span>
+                        <div>
+                            <div class="biz-claim-title">طلب ملكية</div>
+                            <div class="biz-claim-sub">{{ $business->name }}</div>
+                        </div>
+                    </div>
+
+                    <form method="post" action="{{ route('business.claim', $business) }}" class="biz-claim-form">
+                        @csrf
+
+                        <label class="biz-claim-label" for="claim_name">الاسم الكامل</label>
+                        <input id="claim_name" name="claimant_name" required minlength="3" maxlength="120" class="biz-claim-input" autocomplete="name" placeholder="مثال: محمد أحمد">
+
+                        <label class="biz-claim-label" for="claim_phone">رقم موبايل (واتساب)</label>
+                        <input id="claim_phone" name="claimant_phone" required minlength="8" maxlength="20" inputmode="tel" class="biz-claim-input" autocomplete="tel" placeholder="01xxxxxxxxx" dir="ltr" style="text-align: right;">
+
+                        <label class="biz-claim-label" for="claim_email">الإيميل <span class="biz-claim-opt">(اختياري)</span></label>
+                        <input id="claim_email" name="claimant_email" type="email" maxlength="120" class="biz-claim-input" autocomplete="email" placeholder="you@example.com" dir="ltr" style="text-align: right;">
+
+                        <label class="biz-claim-label" for="claim_msg">رسالة <span class="biz-claim-opt">(اختياري)</span></label>
+                        <textarea id="claim_msg" name="message" maxlength="1000" rows="3" class="biz-claim-input" placeholder="إيه اللي بيثبت ملكيتك للنشاط؟ (سجل تجاري، صورة من المحل…)"></textarea>
+
+                        <button type="submit" class="btn btn-teal biz-claim-submit">
+                            إرسال الطلب
+                        </button>
+                        <div class="biz-claim-note">هنراجع طلبك ونتواصل معاك خلال أيام قليلة.</div>
+                    </form>
+                </dialog>
+            @endif
+
+            {{-- ── LIGHTBOX FOR GALLERY ──────────────────────── --}}
+            @if($hasImages)
+                <div id="biz-lightbox" class="biz-lightbox" hidden>
+                    <button type="button" class="biz-lightbox-close" aria-label="إغلاق">✕</button>
+                    <img alt="" referrerpolicy="no-referrer">
                 </div>
             @endif
         </div>
@@ -313,6 +478,222 @@
 .biz-info-ico { color: var(--teal); flex-shrink: 0; }
 .biz-info-sep { height: 1px; background: var(--line); }
 
+/* ── Gallery ─────────────────────────────────────────────────── */
+.biz-gallery {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+}
+.biz-gallery-item {
+    background: var(--ink-7, #F1F4F7);
+    border: none;
+    padding: 0;
+    border-radius: 12px;
+    overflow: hidden;
+    aspect-ratio: 1;
+    cursor: zoom-in;
+    transition: transform .15s ease;
+}
+.biz-gallery-item:active { transform: scale(0.97); }
+.biz-gallery-item img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.biz-lightbox {
+    position: fixed; inset: 0;
+    background: rgba(0, 27, 42, 0.92);
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+    z-index: 100;
+    display: grid;
+    place-items: center;
+    padding: 24px;
+}
+.biz-lightbox[hidden] { display: none; }
+.biz-lightbox img {
+    max-width: 100%; max-height: 100%;
+    border-radius: 12px;
+    box-shadow: 0 20px 60px rgba(0,0,0,.4);
+}
+.biz-lightbox-close {
+    position: absolute;
+    top: calc(14px + env(safe-area-inset-top));
+    right: 14px;
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    background: rgba(255,255,255,.15);
+    color: white;
+    border: none;
+    font-size: 18px;
+    cursor: pointer;
+}
+
+/* ── Reviews ─────────────────────────────────────────────────── */
+.biz-reviews-list { display: flex; flex-direction: column; gap: 14px; }
+.biz-review { border-bottom: 1px solid var(--line); padding-bottom: 14px; }
+.biz-review:last-child { border-bottom: none; padding-bottom: 0; }
+.biz-review-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 6px;
+}
+.biz-review-avatar {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    background: var(--teal-50);
+    color: var(--teal);
+    display: grid; place-items: center;
+    font-weight: 900;
+    font-size: 14px;
+    flex-shrink: 0;
+}
+.biz-review-rating { display: inline-flex; gap: 1px; flex-shrink: 0; }
+.biz-review-body { margin: 4px 0 0; line-height: 1.7; color: var(--ink-2); font-size: 13px; }
+
+.biz-review-replies {
+    margin-top: 8px;
+    padding-right: 14px;
+    border-right: 2px solid var(--line);
+    display: flex; flex-direction: column; gap: 6px;
+}
+.biz-review-reply { font-size: 12px; color: var(--ink-3); }
+
+/* ── Claim dialog ────────────────────────────────────────────── */
+.biz-claim-card { background: linear-gradient(135deg, rgba(13,148,136,.05), rgba(0,27,42,.02)); }
+
+.biz-claim-dialog {
+    border: none;
+    border-radius: 20px;
+    padding: 0;
+    width: min(92vw, 440px);
+    max-height: 92dvh;
+    background: white;
+    box-shadow: 0 30px 80px -10px rgba(0,27,42,.35), 0 8px 24px -8px rgba(0,27,42,.18);
+    overflow: hidden;
+    color: var(--ink-1);
+}
+.biz-claim-dialog::backdrop {
+    background: rgba(0,27,42,.55);
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
+}
+
+/* Dialog opening animation */
+.biz-claim-dialog[open] {
+    animation: claimIn .22s cubic-bezier(.2,.9,.3,1.2);
+}
+@keyframes claimIn {
+    from { transform: translateY(12px) scale(.96); opacity: 0; }
+    to   { transform: translateY(0)    scale(1);   opacity: 1; }
+}
+
+.biz-claim-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 18px 20px 14px;
+    background: linear-gradient(135deg, rgba(13,148,136,.07), rgba(13,148,136,.0));
+    border-bottom: 1px solid rgba(0,27,42,.06);
+}
+.biz-claim-badge {
+    width: 42px; height: 42px;
+    border-radius: 13px;
+    background: white;
+    border: 1px solid rgba(13,148,136,.18);
+    box-shadow: 0 4px 12px -4px rgba(13,148,136,.35);
+    display: grid; place-items: center;
+    flex-shrink: 0;
+}
+.biz-claim-title {
+    font-weight: 900;
+    font-size: 15px;
+    color: var(--ink-1);
+}
+.biz-claim-sub {
+    font-size: 12px;
+    color: var(--ink-3);
+    margin-top: 2px;
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 280px;
+}
+
+.biz-claim-close {
+    position: absolute;
+    top: 14px;
+    left: 14px;   /* RTL: ✕ at far end */
+    background: rgba(0, 27, 42, 0.06);
+    border: none;
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    cursor: pointer;
+    color: var(--ink-2);
+    display: grid;
+    place-items: center;
+    transition: background .15s ease, transform .15s ease;
+    z-index: 2;
+}
+.biz-claim-close:hover { background: rgba(0,27,42,.12); }
+.biz-claim-close:active { transform: scale(.92); }
+
+.biz-claim-form {
+    padding: 16px 20px 20px;
+    overflow-y: auto;
+}
+.biz-claim-label {
+    display: block;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--ink-2);
+    margin: 12px 0 6px;
+}
+.biz-claim-label:first-child { margin-top: 0; }
+.biz-claim-opt {
+    color: var(--ink-4);
+    font-weight: 600;
+    font-size: 11px;
+}
+.biz-claim-input {
+    width: 100%;
+    padding: 11px 13px;
+    border: 1px solid rgba(0,27,42,.12);
+    border-radius: 11px;
+    font-family: inherit;
+    font-size: 13.5px;
+    background: #FAFBFC;
+    color: var(--ink-1);
+    transition: border-color .15s ease, box-shadow .15s ease, background .15s ease;
+}
+.biz-claim-input::placeholder { color: var(--ink-4); font-weight: 500; }
+.biz-claim-input:focus {
+    outline: none;
+    background: white;
+    border-color: var(--teal);
+    box-shadow: 0 0 0 3px rgba(13,148,136,.14);
+}
+textarea.biz-claim-input { resize: vertical; min-height: 70px; line-height: 1.6; }
+
+.biz-claim-submit {
+    width: 100%;
+    padding: 13px;
+    font-size: 13.5px;
+    font-weight: 800;
+    margin-top: 16px;
+    border-radius: 12px;
+}
+.biz-claim-note {
+    text-align: center;
+    font-size: 11.5px;
+    color: var(--ink-4);
+    margin-top: 10px;
+    font-weight: 600;
+}
+
 .biz-mini-map {
     position: relative;
     height: 180px;
@@ -453,6 +834,74 @@
         iconAnchor: [17, 38],
     });
     L.marker([lat, lng], { icon: icon, title: name }).addTo(map);
+})();
+</script>
+
+<script>
+// Image lightbox
+(function () {
+    var box = document.getElementById('biz-lightbox');
+    if (!box) return;
+    var img = box.querySelector('img');
+
+    document.querySelectorAll('.biz-gallery-item').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            img.src = btn.dataset.img;
+            box.hidden = false;
+            document.body.style.overflow = 'hidden';
+        });
+    });
+
+    function close() {
+        box.hidden = true;
+        img.src = '';
+        document.body.style.overflow = '';
+    }
+    box.addEventListener('click', function (e) {
+        if (e.target === box || e.target.classList.contains('biz-lightbox-close')) close();
+    });
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && !box.hidden) close();
+    });
+})();
+
+// Claim dialog
+(function () {
+    var dlg = document.getElementById('claim-dialog');
+    var openBtn = document.getElementById('claim-open');
+    var closeBtn = document.getElementById('claim-close');
+    if (!dlg || !openBtn) return;
+
+    openBtn.addEventListener('click', function () {
+        if (typeof dlg.showModal === 'function') dlg.showModal();
+        else dlg.setAttribute('open', '');
+    });
+    if (closeBtn) {
+        closeBtn.addEventListener('click', function () {
+            if (typeof dlg.close === 'function') dlg.close();
+            else dlg.removeAttribute('open');
+        });
+    }
+    dlg.addEventListener('click', function (e) {
+        var rect = dlg.getBoundingClientRect();
+        var inside = e.clientX >= rect.left && e.clientX <= rect.right
+                  && e.clientY >= rect.top && e.clientY <= rect.bottom;
+        if (!inside) dlg.close();
+    });
+})();
+
+// Reviews "show all"
+(function () {
+    var btn = document.getElementById('reviews-show-more');
+    if (!btn) return;
+    btn.addEventListener('click', function () {
+        // Hidden items are off the DOM (we only rendered first 10).
+        // Simplest: navigate to a query-flagged version that renders all.
+        var u = new URL(window.location.href);
+        u.searchParams.set('all_reviews', '1');
+        u.hash = 'biz-reviews';
+        window.location.href = u.toString();
+    });
 })();
 </script>
 @endpush

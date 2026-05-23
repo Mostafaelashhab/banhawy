@@ -5,16 +5,16 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class Review extends Model
+class BusinessClaim extends Model
 {
     protected $fillable = [
-        'business_id', 'user_id', 'firebase_id',
-        'reviewer_name', 'reviewer_phone', 'rating',
-        'body', 'replies', 'created_at',
+        'business_id', 'user_id',
+        'claimant_name', 'claimant_phone', 'claimant_email',
+        'message', 'status', 'admin_note', 'reviewed_at',
     ];
 
     protected $casts = [
-        'replies' => 'array',
+        'reviewed_at' => 'datetime',
     ];
 
     public function business(): BelongsTo

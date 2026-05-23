@@ -1,6 +1,7 @@
 @extends('layouts.mobile')
 
 @section('title', $bookLabel . ' · ' . $business->name)
+@section('shell-class', 'no-bnav')
 @section('screen-class', 'bg-gray')
 
 @section('content')

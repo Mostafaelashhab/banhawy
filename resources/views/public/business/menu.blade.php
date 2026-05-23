@@ -2,14 +2,103 @@
 
 @section('title', 'المنيو · ' . $business->name)
 @section('page-title', 'المنيو · ' . $business->name)
+@section('shell-class', 'no-bnav')
 @section('screen-class', 'bg-gray')
 
 @section('content')
+@php
+    $totalProducts = $business->categories->sum(fn ($c) => $c->products->count());
+    $isEmptyMenu = $totalProducts === 0;
+@endphp
 <div class="app-head">
     <a href="{{ route('business.show', $business) }}" class="back"><x-icon name="chev-r" :size="18"/></a>
     <div class="title">المنيو · {{ $business->name }}</div>
-    <button type="button" id="menu-search-toggle" class="ico-btn" aria-label="بحث"><x-icon name="search" :size="18"/></button>
+    @unless($isEmptyMenu)
+        <button type="button" id="menu-search-toggle" class="ico-btn" aria-label="بحث"><x-icon name="search" :size="18"/></button>
+    @endunless
 </div>
+
+@if($isEmptyMenu)
+    {{-- ── EMPTY STATE: no products yet ──────────────────────── --}}
+    <div class="menu-empty-state">
+        <div class="menu-empty-illu">
+            <svg viewBox="0 0 96 96" width="96" height="96" fill="none" stroke="#0D9488" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <rect x="14" y="22" width="68" height="58" rx="10" fill="rgba(13,148,136,.06)"/>
+                <path d="M30 22V14a6 6 0 0 1 6-6h24a6 6 0 0 1 6 6v8"/>
+                <line x1="14" y1="40" x2="82" y2="40"/>
+                <circle cx="32" cy="56" r="3" fill="#0D9488" stroke="none"/>
+                <line x1="42" y1="54" x2="68" y2="54"/>
+                <line x1="42" y1="60" x2="60" y2="60"/>
+                <circle cx="32" cy="70" r="3" fill="#0D9488" stroke="none"/>
+                <line x1="42" y1="68" x2="68" y2="68"/>
+                <line x1="42" y1="74" x2="56" y2="74"/>
+            </svg>
+        </div>
+        <div class="menu-empty-title">المنيو لسه فاضي</div>
+        <p class="menu-empty-sub">صاحب المتجر لسه ما أضافش منتجاته على بنهاوي. ممكن تتواصل معاه مباشرة لمعرفة المنيو والأسعار.</p>
+
+        <div class="menu-empty-actions">
+            @if($business->phone || $business->whatsapp)
+                <a href="tel:{{ $business->phone ?? $business->whatsapp }}" class="btn btn-line" style="padding: 11px; font-size: 13px; flex: 1;">
+                    <x-icon name="phone" :size="14" stroke="#0D9488"/> اتصل
+                </a>
+            @endif
+            @if($business->whatsapp)
+                <a href="{{ route('business.whatsapp', $business) }}" class="btn btn-wa" style="padding: 11px; font-size: 13px; flex: 1;">
+                    <x-icon name="whatsapp" :size="14" stroke="white"/> واتساب
+                </a>
+            @endif
+        </div>
+
+        <a href="{{ route('business.show', $business) }}" class="menu-empty-back">رجوع لصفحة المتجر</a>
+    </div>
+
+    <style>
+    .menu-empty-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        padding: 28px 24px 40px;
+        gap: 4px;
+    }
+    .menu-empty-illu {
+        margin-bottom: 14px;
+        animation: emptyFloat 4s ease-in-out infinite;
+    }
+    @keyframes emptyFloat {
+        0%, 100% { transform: translateY(0); }
+        50%      { transform: translateY(-6px); }
+    }
+    .menu-empty-title {
+        font-weight: 900;
+        font-size: 18px;
+        color: var(--ink-1);
+    }
+    .menu-empty-sub {
+        color: var(--ink-3);
+        font-size: 13px;
+        line-height: 1.75;
+        margin: 6px 0 18px;
+        max-width: 320px;
+        font-weight: 600;
+    }
+    .menu-empty-actions {
+        display: flex;
+        gap: 8px;
+        width: 100%;
+        max-width: 320px;
+    }
+    .menu-empty-back {
+        margin-top: 14px;
+        color: var(--ink-3);
+        font-size: 12px;
+        font-weight: 700;
+        text-decoration: underline;
+        text-underline-offset: 3px;
+    }
+    </style>
+@else
 
 {{-- Search input (collapsed by default; toggled by the icon above) --}}
 <div id="menu-search-wrap" hidden style="padding: 0 14px 8px;">
@@ -178,4 +267,5 @@
     update();
 })();
 </script>
+@endif
 @endsection

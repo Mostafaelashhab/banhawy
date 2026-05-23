@@ -2,6 +2,7 @@
 
 @section('title', 'تم استلام حجزك · ' . $business->name)
 @section('page-title', 'تم استلام الحجز')
+@section('shell-class', 'no-bnav')
 @section('screen-class', 'bg-gray')
 
 @section('content')

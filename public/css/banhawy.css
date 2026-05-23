@@ -163,6 +163,23 @@ html { overflow-x: hidden; }
 .shell:not(.is-landing) {
     padding-bottom: calc(64px + env(safe-area-inset-bottom));
 }
+/* Pages that explicitly opt out of a bnav (e.g. public business pages with sticky CTA) */
+.shell.no-bnav { padding-bottom: 0; }
+/* Modern browsers: drop the padding automatically when no .bnav is rendered */
+@supports selector(:has(*)) {
+    .shell:not(.is-landing):not(:has(.bnav)) { padding-bottom: 0; }
+}
+
+/* Hide page scrollbars globally — content still scrolls */
+html, body { scrollbar-width: none; -ms-overflow-style: none; }
+html::-webkit-scrollbar, body::-webkit-scrollbar { display: none; width: 0; height: 0; }
+.screen, .scroll, .shell {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+.screen::-webkit-scrollbar,
+.scroll::-webkit-scrollbar,
+.shell::-webkit-scrollbar { display: none; width: 0; height: 0; }
 
 .bnav-item {
     position: relative;
