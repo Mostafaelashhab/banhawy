@@ -155,7 +155,8 @@ html { overflow-x: hidden; }
     will-change: transform;
 }
 .bnav.is-hidden {
-    transform: translateY(calc(100% + env(safe-area-inset-bottom)));
+    /* disabled — bnav stays visible at all times */
+    transform: none;
 }
 
 /* Push page content above the fixed bnav so nothing hides behind it. */

@@ -380,57 +380,11 @@
 })();
 </script>
 
-{{-- ── Bottom-nav auto-hide on scroll ───────────────────────── --}}
+{{-- Bottom nav: always visible (no auto-hide) --}}
 <script>
 (function () {
     var bnav = document.querySelector('.bnav');
-    if (!bnav) return;
-
-    var idleTimer;
-    var lastY = 0;
-    var ticking = false;
-
-    function show() { bnav.classList.remove('is-hidden'); }
-    function hide() { bnav.classList.add('is-hidden'); }
-
-    function handle(y) {
-        var dy = y - lastY;
-
-        // Hide only when scrolling DOWN with intent (> 8px) and past the very top
-        if (dy > 8 && y > 60) {
-            hide();
-        } else if (dy < -4 || y <= 60) {
-            // Scrolling up (any amount) or near top → reveal instantly
-            show();
-        }
-
-        // Always reveal shortly after user stops
-        clearTimeout(idleTimer);
-        idleTimer = setTimeout(show, 120);
-
-        lastY = y;
-        ticking = false;
-    }
-
-    function onScroll(y) {
-        if (ticking) return;
-        ticking = true;
-        requestAnimationFrame(function () { handle(y); });
-    }
-
-    var roots = [window].concat(Array.from(document.querySelectorAll('.scroll')));
-    roots.forEach(function (root) {
-        root.addEventListener('scroll', function () {
-            var y = (root === window) ? window.scrollY : root.scrollTop;
-            onScroll(y);
-        }, { passive: true });
-    });
-
-    // Reveal on any touch end (user lifted finger) — covers momentum-stop edge cases on iOS
-    document.addEventListener('touchend', function () {
-        clearTimeout(idleTimer);
-        idleTimer = setTimeout(show, 120);
-    }, { passive: true });
+    if (bnav) bnav.classList.remove('is-hidden');
 })();
 </script>
 
