@@ -203,7 +203,7 @@ html::-webkit-scrollbar, body::-webkit-scrollbar { display: none; width: 0; heig
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    line-height: 1;
+    line-height: 1.4;
 }
 
 /* Icon sits inside an icon-container — clean separation from label */
@@ -222,23 +222,12 @@ html::-webkit-scrollbar, body::-webkit-scrollbar { display: none; width: 0; heig
     transition: transform .18s ease;
 }
 
-/* Active state: just bolder color + subtle scale on icon · clean iOS-like */
+/* Active state: just bolder color + slight scale on icon · clean iOS-like */
 .bnav-item.active {
     color: var(--teal);
     font-weight: 800;
 }
-.bnav-item.active svg { transform: scale(1.08); }
-.bnav-item.active::after {
-    content: "";
-    position: absolute;
-    bottom: -6px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 4px;
-    height: 4px;
-    border-radius: 50%;
-    background: var(--teal);
-}
+.bnav-item.active svg { transform: scale(1.10); }
 
 /* ── Misc atoms ─────────────────────────────────────────────────── */
 .muted { color: var(--ink-3); font-size: 12px; font-weight: 600; }
