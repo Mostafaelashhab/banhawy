@@ -14,7 +14,7 @@
     <div class="flash">{{ session('flash') }}</div>
 @endif
 
-<div class="scroll" style="padding: 14px 14px 14px;">
+<div class="scroll" style="padding: 14px 14px 14px; display: flex; flex-direction: column; flex: 1; min-height: 0;">
 
     {{-- ── Profile card ───────────────────────────────────── --}}
     <div class="card" style="padding: 18px; display: flex; align-items: center; gap: 14px;">
@@ -93,7 +93,7 @@
     </div>
 
     {{-- ── Logout ─────────────────────────────────────────── --}}
-    <form method="post" action="{{ route('logout') }}" style="margin-top: 18px;">
+    <form method="post" action="{{ route('logout') }}" style="margin-top: auto; padding-top: 18px;">
         @csrf
         <button type="submit" class="btn btn-line btn-full" style="padding: 13px; font-size: 13px; color: #B91C1C; border-color: #FECACA;">
             <x-icon name="logout" :size="14" stroke="#B91C1C"/>
