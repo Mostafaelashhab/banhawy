@@ -22,3 +22,17 @@ Schedule::command('banhawy:nudge --audience=customers')
     ->at('18:00')
     ->withoutOverlapping()
     ->onOneServer();
+
+// ── Road alerts maintenance ──────────────────────────────────────────────
+// Mark past-TTL alerts as expired so they drop out of hot-path queries fast.
+// Every 5 minutes is a good balance between freshness and load.
+Schedule::command('banhawy:expire-alerts')
+    ->everyFiveMinutes()
+    ->withoutOverlapping()
+    ->onOneServer();
+
+// Hard-delete inactive alerts older than 30 days — daily at 3 AM (low traffic).
+Schedule::command('banhawy:purge-alerts --days=30')
+    ->dailyAt('03:00')
+    ->withoutOverlapping()
+    ->onOneServer();

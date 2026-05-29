@@ -214,6 +214,8 @@ Route::middleware('auth')->group(function () {
 
         // Road & safety alerts (أمان وطريق بنها)
         Route::get('/alerts',                 [\App\Http\Controllers\Admin\RoadAlertController::class, 'index'])->name('alerts.index');
+        Route::get('/alerts/metrics',         [\App\Http\Controllers\Admin\RoadAlertController::class, 'metrics'])->name('alerts.metrics');
+        Route::get('/alerts/heatmap',         [\App\Http\Controllers\Admin\RoadAlertController::class, 'heatmap'])->name('alerts.heatmap');
         Route::patch('/alerts/{alert}',       [\App\Http\Controllers\Admin\RoadAlertController::class, 'update'])->name('alerts.update');
         Route::delete('/alerts/{alert}',      [\App\Http\Controllers\Admin\RoadAlertController::class, 'destroy'])->name('alerts.destroy');
     });

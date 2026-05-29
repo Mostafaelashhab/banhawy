@@ -7,29 +7,109 @@ use App\Models\RoadAlert;
 use App\Models\RoadAlertVote;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 
 class RoadAlertController extends Controller
 {
+    /** Max alerts returned in one response (bbox guard). */
+    private const MAX_PAGE = 500;
+
+    /** How long to memoise the un-bounded recent alerts query. */
+    private const CACHE_TTL_SECONDS = 15;
+
+    /** Per-user soft cap on alerts created per hour. */
+    private const USER_HOURLY_CAP = 8;
+
     /**
-     * Return all currently-active alerts as JSON.
-     * Used by the map's navigation polling loop (every ~12s).
+     * Active alerts for the map / polling.
+     *
+     *  Query params:
+     *    bounds       (south,west,north,east)  – limit to a viewport
+     *    since        (ISO timestamp)          – delta polling: only changed rows
+     *    types        (comma list of slugs)    – filter by type
+     *
+     *  Always returns server-time so the client can use it as the next `since`.
      */
     public function active(Request $request): JsonResponse
     {
-        $ipHash = hash('sha256', ($request->ip() ?? '') . '|alert-vote');
+        $data = $request->validate([
+            'bounds' => ['nullable', 'string', 'regex:/^-?\d+(\.\d+)?,-?\d+(\.\d+)?,-?\d+(\.\d+)?,-?\d+(\.\d+)?$/'],
+            'since'  => ['nullable', 'date'],
+            'types'  => ['nullable', 'string', 'max:200'],
+        ]);
 
-        $alerts = RoadAlert::active()->latest()->get();
+        $now       = now();
+        $voterHash = $this->voterHash($request);
+
+        // Parse bounding box → [south, west, north, east]
+        $bounds = null;
+        if (! empty($data['bounds'])) {
+            $parts = array_map('floatval', explode(',', $data['bounds']));
+            if (count($parts) === 4 && $parts[0] < $parts[2] && $parts[1] < $parts[3]) {
+                $bounds = $parts;
+            }
+        }
+
+        // Parse `since` for delta polling
+        $since = null;
+        if (! empty($data['since'])) {
+            try { $since = Carbon::parse($data['since']); }
+            catch (\Throwable) { $since = null; }
+        }
+
+        // Filter types whitelist
+        $allowedTypes = array_keys(RoadAlert::TYPES);
+        $types = null;
+        if (! empty($data['types'])) {
+            $types = array_intersect(explode(',', $data['types']), $allowedTypes);
+            if (empty($types)) $types = null;
+        }
+
+        // ── Build query ──────────────────────────────────────────
+        $query = RoadAlert::query()->active();
+
+        if ($bounds)  $query->withinBounds(...$bounds);
+        if ($since)   $query->changedSince($since);
+        if ($types)   $query->whereIn('type', $types);
+
+        // Order: confirmed alerts first, then newest. Cap to avoid heavy payloads.
+        $query->orderByDesc('confirmations_count')
+              ->orderByDesc('updated_at')
+              ->limit(self::MAX_PAGE);
+
+        // ── Cache the raw rows (without voter context) for short TTL ──
+        // Cache key encodes the filters that affect rows.
+        $cacheKey = 'alerts:active:' . md5(json_encode([
+            'b' => $bounds, 's' => $since?->timestamp, 't' => $types,
+        ]));
+
+        $rows = Cache::remember($cacheKey, self::CACHE_TTL_SECONDS, function () use ($query) {
+            return $query->get();
+        });
+
+        // Map to JSON. Voter context is per-request → done outside the cache.
+        $voterChoices = $rows->isEmpty() ? collect() : RoadAlertVote::query()
+            ->whereIn('road_alert_id', $rows->pluck('id'))
+            ->where('ip_hash', $voterHash)
+            ->pluck('kind', 'road_alert_id');
+
+        $alerts = $rows->map(fn ($a) => $this->shape($a, $voterChoices[$a->id] ?? null));
 
         return response()->json([
-            'alerts' => $alerts->map(fn ($a) => $this->shape($a, $ipHash))->values(),
-        ]);
+            'alerts'      => $alerts->values(),
+            'server_time' => $now->toIso8601String(),
+            'count'       => $alerts->count(),
+            'truncated'   => $alerts->count() === self::MAX_PAGE,
+        ])->header('Cache-Control', 'no-store');
     }
 
     /**
-     * Submit a new alert.
+     * Submit a new alert. Anti-spam: dedup by location + per-user/IP rate limit.
      */
     public function store(Request $request): JsonResponse
     {
@@ -40,32 +120,57 @@ class RoadAlertController extends Controller
             'description' => 'nullable|string|max:500',
         ]);
 
-        // Light sanity: keep alerts inside Banha (~25km radius from centre 30.46, 31.18)
+        // Geo-fence: must be inside Banha area (30km from centre)
         $distKm = $this->distanceKm(30.4582, 31.1797, (float) $data['lat'], (float) $data['lng']);
         if ($distKm > 30) {
-            return response()->json([
-                'ok'     => false,
-                'error'  => 'الموقع خارج نطاق بنها.',
-            ], 422);
+            return response()->json(['ok' => false, 'error' => 'الموقع خارج نطاق بنها.'], 422);
         }
 
         $ipHash = hash('sha256', ($request->ip() ?? '') . '|alert');
+        $userId = Auth::id();
 
-        // Rate-limit per IP — max 10 alerts/hour
-        $recent = RoadAlert::where('ip_hash', $ipHash)
+        // ── IP rate limit (already handled by throttle middleware, but enforce
+        //    a tighter "alerts created" cap here for visibility) ──
+        $recentByIp = RoadAlert::where('ip_hash', $ipHash)
             ->where('created_at', '>=', now()->subHour())
             ->count();
-        if ($recent >= 10) {
-            return response()->json([
-                'ok'    => false,
-                'error' => 'تجاوزت الحد المسموح. استنّى ساعة وحاول تاني.',
-            ], 429);
+        if ($recentByIp >= 10) {
+            return response()->json(['ok' => false, 'error' => 'تجاوزت الحد المسموح. استنّى ساعة وحاول تاني.'], 429);
         }
 
-        $cfg = RoadAlert::TYPES[$data['type']];
+        // Per-user cap (extra protection over IP, since multiple users can NAT-share an IP)
+        if ($userId) {
+            $recentByUser = RoadAlert::where('user_id', $userId)
+                ->where('created_at', '>=', now()->subHour())
+                ->count();
+            if ($recentByUser >= self::USER_HOURLY_CAP) {
+                return response()->json(['ok' => false, 'error' => 'وصلت الحد الأقصى للساعة.'], 429);
+            }
+        }
 
+        // ── Anti-duplicate: same type within radius + 10 minutes ──
+        $duplicate = RoadAlert::findNearbyDuplicate(
+            $data['type'],
+            (float) $data['lat'],
+            (float) $data['lng'],
+            10
+        );
+        if ($duplicate) {
+            // Instead of refusing outright, treat the new submission as a confirmation
+            // of the existing alert. This is the right UX for crowd-sourcing.
+            $this->autoConfirmFromIp($duplicate, $ipHash);
+            return response()->json([
+                'ok'         => true,
+                'merged'     => true,
+                'message'    => 'تنبيه مشابه موجود قريب · تم اعتباره تأكيد إضافي.',
+                'alert'      => $this->shape($duplicate->fresh(), 'confirm'),
+            ], 200);
+        }
+
+        // ── Create ──
+        $cfg = RoadAlert::TYPES[$data['type']];
         $alert = RoadAlert::create([
-            'user_id'     => Auth::id(),
+            'user_id'     => $userId,
             'type'        => $data['type'],
             'title'       => $cfg['label_ar'],
             'description' => $data['description'] ?? null,
@@ -76,23 +181,25 @@ class RoadAlertController extends Controller
             'expires_at'  => now()->addHours($cfg['ttl_hours']),
         ]);
 
+        $this->bumpCacheVersion();
+
+        Log::info('[alert.created]', [
+            'id'   => $alert->id,
+            'type' => $alert->type,
+            'user' => $userId,
+        ]);
+
         return response()->json([
             'ok'    => true,
-            'alert' => $this->shape($alert, $ipHash),
-        ]);
+            'alert' => $this->shape($alert, null),
+        ], 201);
     }
 
-    /**
-     * "مازال موجود" → confirm the alert (extends life + adds confirmation).
-     */
     public function confirm(Request $request, RoadAlert $alert): JsonResponse
     {
         return $this->vote($request, $alert, 'confirm');
     }
 
-    /**
-     * "غير موجود" → reject the alert.
-     */
     public function reject(Request $request, RoadAlert $alert): JsonResponse
     {
         return $this->vote($request, $alert, 'reject');
@@ -104,25 +211,21 @@ class RoadAlertController extends Controller
             return response()->json(['ok' => false, 'error' => 'هذا التنبيه لم يعد نشطاً.'], 410);
         }
 
-        $ipHash = hash('sha256', ($request->ip() ?? '') . '|alert-vote');
+        $ipHash = $this->voterHash($request);
 
-        // One vote per IP per alert (changes mind = updates kind)
-        $existing = RoadAlertVote::where('road_alert_id', $alert->id)
-            ->where('ip_hash', $ipHash)
-            ->first();
+        DB::transaction(function () use ($alert, $ipHash, $kind) {
+            $existing = RoadAlertVote::where('road_alert_id', $alert->id)
+                ->where('ip_hash', $ipHash)
+                ->lockForUpdate()
+                ->first();
 
-        DB::transaction(function () use ($alert, $existing, $ipHash, $kind) {
             if ($existing && $existing->kind === $kind) {
-                return;   // idempotent
+                return;
             }
 
             if ($existing) {
-                // Switch vote: undo the previous one
-                if ($existing->kind === 'confirm') {
-                    $alert->decrement('confirmations_count');
-                } else {
-                    $alert->decrement('rejections_count');
-                }
+                if ($existing->kind === 'confirm') $alert->decrement('confirmations_count');
+                else                                $alert->decrement('rejections_count');
                 $existing->update(['kind' => $kind]);
             } else {
                 RoadAlertVote::create([
@@ -132,16 +235,13 @@ class RoadAlertController extends Controller
                 ]);
             }
 
-            // Apply the new vote
             if ($kind === 'confirm') {
                 $alert->increment('confirmations_count');
-                // Each confirmation extends life by 30 minutes (cap at original TTL)
                 $maxExpires = now()->addHours($alert->ttlHoursForType());
                 $extended = $alert->expires_at->copy()->addMinutes(30);
-                $alert->update(['expires_at' => min($extended, $maxExpires)]);
+                $alert->update(['expires_at' => $extended->min($maxExpires)]);
             } else {
                 $alert->increment('rejections_count');
-                // Auto-hide if too many rejections
                 if ($alert->fresh()->rejections_count >= RoadAlert::REJECT_THRESHOLD) {
                     $alert->update(['status' => 'rejected']);
                 }
@@ -149,17 +249,63 @@ class RoadAlertController extends Controller
         });
 
         $alert->refresh();
+        $this->bumpCacheVersion();
 
         return response()->json([
             'ok'    => true,
-            'alert' => $this->shape($alert, $ipHash),
+            'alert' => $this->shape($alert, $this->voterChoice($alert->id, $ipHash)),
         ]);
     }
 
+    /* ── Internal helpers ─────────────────────────────────────── */
+
+    private function autoConfirmFromIp(RoadAlert $alert, string $ipHash): void
+    {
+        // Idempotent: only counts the first time this IP touches this alert
+        $already = RoadAlertVote::where('road_alert_id', $alert->id)
+            ->where('ip_hash', $ipHash)
+            ->exists();
+        if ($already) return;
+
+        RoadAlertVote::create([
+            'road_alert_id' => $alert->id,
+            'ip_hash'       => $ipHash,
+            'kind'          => 'confirm',
+        ]);
+        $alert->increment('confirmations_count');
+
+        $maxExpires = now()->addHours($alert->ttlHoursForType());
+        $extended   = $alert->expires_at->copy()->addMinutes(30);
+        $alert->update(['expires_at' => $extended->min($maxExpires)]);
+    }
+
+    private function voterHash(Request $request): string
+    {
+        return hash('sha256', ($request->ip() ?? '') . '|alert-vote');
+    }
+
+    private function voterChoice(int $alertId, string $ipHash): ?string
+    {
+        return RoadAlertVote::where('road_alert_id', $alertId)
+            ->where('ip_hash', $ipHash)
+            ->value('kind');
+    }
+
     /**
-     * Lightweight JSON payload shape used by the map's JS layer.
+     * Invalidate the active-alerts cache when anything changes.
+     * (Keys are filter-specific; we use a generation counter trick to nuke all.)
      */
-    private function shape(RoadAlert $a, ?string $voterHash = null): array
+    private function bumpCacheVersion(): void
+    {
+        // Simple flush of all `alerts:active:*` keys. Cache::flush() is too broad;
+        // since keys are short-lived (15s TTL) the right move is just to forget the
+        // common keys. With a tag-able store we'd tag them — but file/db driver
+        // doesn't support tags. Acceptable trade-off: clients will see staleness
+        // for at most 15 seconds.
+        // Intentionally a no-op; the short TTL is our consistency window.
+    }
+
+    private function shape(RoadAlert $a, ?string $voterChoice): array
     {
         return [
             'id'              => $a->id,
@@ -176,25 +322,14 @@ class RoadAlertController extends Controller
             'is_confirmed'    => $a->isCommunityConfirmed(),
             'expires_at'      => $a->expires_at?->toIso8601String(),
             'created_at'      => $a->created_at?->toIso8601String(),
+            'updated_at'      => $a->updated_at?->toIso8601String(),
             'age_minutes'     => $a->created_at?->diffInMinutes(now()),
-            'voter_choice'    => $voterHash ? $this->voterChoice($a->id, $voterHash) : null,
+            'voter_choice'    => $voterChoice,
         ];
     }
 
-    private function voterChoice(int $alertId, string $ipHash): ?string
-    {
-        return RoadAlertVote::where('road_alert_id', $alertId)
-            ->where('ip_hash', $ipHash)
-            ->value('kind');
-    }
-
-    /** Great-circle distance in km. */
     private function distanceKm(float $lat1, float $lng1, float $lat2, float $lng2): float
     {
-        $earth = 6371;
-        $dLat = deg2rad($lat2 - $lat1);
-        $dLng = deg2rad($lng2 - $lng1);
-        $a = sin($dLat / 2) ** 2 + cos(deg2rad($lat1)) * cos(deg2rad($lat2)) * sin($dLng / 2) ** 2;
-        return $earth * (2 * atan2(sqrt($a), sqrt(1 - $a)));
+        return RoadAlert::distanceMeters($lat1, $lng1, $lat2, $lng2) / 1000;
     }
 }

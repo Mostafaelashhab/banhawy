@@ -1707,47 +1707,137 @@ body.is-navigating .alert-marker.is-off-route {
         return total;
     }
 
-    /* ── Realtime polling for alerts (every 12s) ──────────────── */
+    /* ── Realtime polling for alerts — production-grade ─────────
+     *   - Bounding-box query so the server only returns visible markers
+     *   - Delta polling via `since` so we only get rows that changed
+     *   - Exponential backoff on errors (12s → 30s → 60s → 120s → 120s …)
+     *   - Auto-restart on visibility change (page wake)
+     *   - Full refresh every ~5 minutes to recover from any drift
+     * ─────────────────────────────────────────────────────────── */
+    var navLastServerTime = null;
+    var navPollFails      = 0;
+    var navFullResyncEvery= 5 * 60 * 1000;  // 5 minutes
+    var navLastFullSync   = 0;
+
     function navStartPolling() {
         navStopPolling();
-        navPollTimer = setInterval(navPollAlerts, NAV_POLL_INTERVAL);
+        navPollFails = 0;
+        navLastServerTime = null;
+        navScheduleNextPoll(0);
     }
     function navStopPolling() {
-        if (navPollTimer) { clearInterval(navPollTimer); navPollTimer = null; }
+        if (navPollTimer) { clearTimeout(navPollTimer); navPollTimer = null; }
     }
+    function navScheduleNextPoll(delayOverride) {
+        navStopPolling();
+        // Exponential backoff (caps at 120s)
+        var backoff = Math.min(NAV_POLL_INTERVAL * Math.pow(2, navPollFails), 120000);
+        var delay   = (typeof delayOverride === 'number') ? delayOverride : backoff;
+        navPollTimer = setTimeout(navPollAlerts, delay);
+    }
+
+    function navCurrentBoundsParam() {
+        // Use the map's visible viewport, slightly inflated so markers just
+        // outside the edge are pre-loaded for smoother panning.
+        var b = map.getBounds().pad(0.2);
+        return [
+            b.getSouth().toFixed(5),
+            b.getWest().toFixed(5),
+            b.getNorth().toFixed(5),
+            b.getEast().toFixed(5),
+        ].join(',');
+    }
+
     function navPollAlerts() {
-        fetch('/alerts/active', { headers: { Accept: 'application/json' } })
-            .then(function (r) { return r.json(); })
+        var now = Date.now();
+        var forceFull = (now - navLastFullSync) > navFullResyncEvery;
+
+        var params = new URLSearchParams();
+        params.set('bounds', navCurrentBoundsParam());
+        if (navLastServerTime && !forceFull) params.set('since', navLastServerTime);
+
+        var url = '/alerts/active?' + params.toString();
+        fetch(url, { headers: { Accept: 'application/json' } })
+            .then(function (r) {
+                if (!r.ok) throw new Error('http ' + r.status);
+                return r.json();
+            })
             .then(function (data) {
-                var fresh = data.alerts || [];
-                var freshIds = {};
+                navPollFails = 0; // reset backoff on success
+                navLastServerTime = data.server_time || null;
+
+                var fresh   = data.alerts || [];
+                var isDelta = !!navLastServerTime && !forceFull;
+
                 fresh.forEach(function (a) {
-                    freshIds[a.id] = true;
                     if (alertMarkers[a.id]) {
-                        // Update existing
+                        // Update in place — keeps the marker DOM node stable
                         alertMarkers[a.id].alert = a;
                         alertMarkers[a.id].marker.setPopupContent(alertPopupHtml(a));
-                    } else {
-                        // Brand new
+                        var el = alertMarkers[a.id].marker.getElement();
+                        if (el) {
+                            // Refresh confirmed-badge state without recreating the icon
+                            var pin = el.querySelector('.alert-marker-pin');
+                            if (pin) pin.classList.toggle('is-confirmed', !!a.is_confirmed);
+                        }
+                        // If status changed to inactive, remove
+                        if (a.status !== 'active') {
+                            map.removeLayer(alertMarkers[a.id].marker);
+                            delete alertMarkers[a.id];
+                        }
+                    } else if (a.status === 'active') {
                         alertMarkers[a.id] = { marker: buildAlertMarker(a), alert: a };
                     }
                 });
-                // Remove markers for alerts no longer active
-                Object.keys(alertMarkers).forEach(function (id) {
-                    if (!freshIds[id]) {
-                        map.removeLayer(alertMarkers[id].marker);
-                        delete alertMarkers[id];
-                    }
-                });
-                // Re-evaluate which alerts are on the route
+
+                // On a FULL refresh, prune markers the server no longer returned
+                if (forceFull) {
+                    var freshIds = {};
+                    fresh.forEach(function (a) { freshIds[a.id] = true; });
+                    Object.keys(alertMarkers).forEach(function (id) {
+                        if (!freshIds[id]) {
+                            map.removeLayer(alertMarkers[id].marker);
+                            delete alertMarkers[id];
+                        }
+                    });
+                    navLastFullSync = now;
+                }
+
+                // Re-evaluate route context
                 if (NAV_STATE === 'active' && navRouteCoords) {
                     navHighlightAlertsOnRoute();
                     navCheckProximity();
                     navUpdateActiveBar();
                 }
             })
-            .catch(function () { /* offline · keep previous data */ });
+            .catch(function (err) {
+                navPollFails = Math.min(navPollFails + 1, 4);
+            })
+            .finally(function () {
+                // Schedule the next tick only while we're still in active mode
+                if (NAV_STATE === 'active') navScheduleNextPoll();
+            });
     }
+
+    // Pause polling when the page is hidden (saves battery + bandwidth),
+    // resume immediately when it comes back.
+    document.addEventListener('visibilitychange', function () {
+        if (NAV_STATE !== 'active') return;
+        if (document.hidden) {
+            navStopPolling();
+        } else {
+            navScheduleNextPoll(0);
+        }
+    });
+
+    // Also re-poll when the user finishes panning the map — they probably want
+    // to see what alerts are in the new viewport.
+    var navMapMoveTimer = null;
+    map.on('moveend', function () {
+        if (NAV_STATE !== 'active') return;
+        clearTimeout(navMapMoveTimer);
+        navMapMoveTimer = setTimeout(function () { navScheduleNextPoll(0); }, 400);
+    });
 
     /* ── Stop / recalc ────────────────────────────────────────── */
     navStopBtn?.addEventListener('click', function () {
