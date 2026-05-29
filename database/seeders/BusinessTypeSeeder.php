@@ -10,12 +10,10 @@ class BusinessTypeSeeder extends Seeder
     public function run(): void
     {
         $types = [
-            ['slug' => 'restaurant', 'name_ar' => 'مطعم / كافيه',   'icon' => 'utensils',   'description_ar' => 'طلبات وحجوزات طاولات', 'sort' => 1],
-            ['slug' => 'shop',       'name_ar' => 'محل / متجر',     'icon' => 'shop',       'description_ar' => 'ملابس · مستلزمات',     'sort' => 2],
-            ['slug' => 'clinic',     'name_ar' => 'عيادة / دكتور',  'icon' => 'steth',      'description_ar' => 'حجز كشف وعيادات',      'sort' => 3],
-            ['slug' => 'salon',      'name_ar' => 'صالون / تجميل',  'icon' => 'scissors',   'description_ar' => 'حجز مواعيد',           'sort' => 4],
-            ['slug' => 'education',  'name_ar' => 'مركز تعليمي',    'icon' => 'graduation', 'description_ar' => 'كورسات · دروس',        'sort' => 5],
-            ['slug' => 'service',    'name_ar' => 'خدمة / شركة',    'icon' => 'briefcase',  'description_ar' => 'صنايعية · حلول',       'sort' => 6],
+            // ── Services (priority) ────────────────────────────────────
+            ['slug' => 'shipping',   'name_ar' => 'شركات شحن',      'icon' => 'truck',      'description_ar' => 'شحن داخلي وخارجي',     'sort' => 1],
+            ['slug' => 'service',    'name_ar' => 'خدمة / شركة',    'icon' => 'briefcase',  'description_ar' => 'صنايعية · حلول',       'sort' => 2],
+            // ── Commerce (secondary) ───────────────────────────────────
         ];
 
         foreach ($types as $t) {

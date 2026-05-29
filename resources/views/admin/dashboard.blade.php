@@ -34,6 +34,22 @@
             <div class="a-stat-value">{{ $stats['claims_pending'] + $stats['reports_pending'] }}</div>
             <div class="a-stat-meta">{{ $stats['claims_pending'] }} ملكية · {{ $stats['reports_pending'] }} بلاغ</div>
         </div>
+        <div class="a-stat">
+            <div class="a-stat-icon" style="background: rgba(13,148,136,.10); color: var(--teal);">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><polyline points="8 12 11 15 16 9"/></svg>
+            </div>
+            <div class="a-stat-label">المهام</div>
+            <div class="a-stat-value">{{ number_format($stats['tasks_total']) }}</div>
+            <div class="a-stat-meta">{{ $stats['tasks_open'] }} مفتوحة الآن</div>
+        </div>
+        <div class="a-stat">
+            <div class="a-stat-icon" style="background: rgba(124,58,237,.12); color: #7C3AED;">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="3"/><path d="M11 22s7-6 7-12a7 7 0 1 0-14 0c0 6 7 12 7 12z"/></svg>
+            </div>
+            <div class="a-stat-label">المفقودات</div>
+            <div class="a-stat-value">{{ number_format($stats['lost_total']) }}</div>
+            <div class="a-stat-meta">{{ $stats['lost_open'] }} مفتوحة الآن</div>
+        </div>
     </div>
 
     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
@@ -108,6 +124,61 @@
                 @endforeach
             </tbody>
         </table>
+    </div>
+
+    {{-- Community stats: tasks + lost items ─────────────────── --}}
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px;">
+        <div class="a-card">
+            <div class="a-card-head">
+                <div class="a-card-title">آخر المهام · {{ $stats['tasks_open'] }} مفتوحة</div>
+                <a href="{{ route('admin.tasks.index') }}" class="a-btn a-btn-line a-btn-sm">عرض الكل</a>
+            </div>
+            @forelse($recentTasks as $t)
+                <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--line);">
+                    <div style="min-width: 0; flex: 1;">
+                        <div style="font-weight: 800; font-size: 13px;">{{ Str::limit($t->title, 40) }}</div>
+                        <div style="font-size: 11px; color: var(--ink-3); font-weight: 700; margin-top: 2px;">
+                            {{ \App\Models\Task::CATEGORIES[$t->category] ?? '—' }} ·
+                            {{ $t->contact_name }} ·
+                            {{ $t->created_at?->diffForHumans() }}
+                        </div>
+                    </div>
+                    @switch($t->status)
+                        @case('open')        <span class="a-pill a-pill-teal">مفتوحة</span> @break
+                        @case('in_progress') <span class="a-pill a-pill-blue">قيد التنفيذ</span> @break
+                        @case('completed')   <span class="a-pill a-pill-green">منتهية</span> @break
+                        @case('cancelled')   <span class="a-pill a-pill-gray">ملغية</span> @break
+                    @endswitch
+                </div>
+            @empty
+                <div class="a-empty">لسه مفيش مهام منشورة.</div>
+            @endforelse
+        </div>
+
+        <div class="a-card">
+            <div class="a-card-head">
+                <div class="a-card-title">آخر المفقودات · {{ $stats['lost_open'] }} مفتوحة</div>
+                <a href="{{ route('admin.lost.index') }}" class="a-btn a-btn-line a-btn-sm">عرض الكل</a>
+            </div>
+            @forelse($recentLost as $l)
+                <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--line); gap: 10px;">
+                    <div style="min-width: 0; flex: 1;">
+                        <div style="font-weight: 800; font-size: 13px;">{{ Str::limit($l->title, 38) }}</div>
+                        <div style="font-size: 11px; color: var(--ink-3); font-weight: 700; margin-top: 2px;">
+                            {{ \App\Models\LostItem::CATEGORIES[$l->category] ?? '—' }} ·
+                            {{ $l->created_at?->diffForHumans() }}
+                        </div>
+                    </div>
+                    @if($l->kind === 'lost')
+                        <span class="a-pill a-pill-red">ضايع</span>
+                    @else
+                        <span class="a-pill a-pill-green">موجود</span>
+                    @endif
+                </div>
+            @empty
+                <div class="a-empty">لسه مفيش بلاغات مفقودات.</div>
+            @endforelse
+        </div>
     </div>
 
 </x-admin-layout>

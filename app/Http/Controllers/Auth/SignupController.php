@@ -3,9 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
-use App\Models\PhoneOtp;
 use App\Models\User;
-use App\Services\WhatsAppSender;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -18,7 +16,7 @@ class SignupController extends Controller
         return view('auth.signup');
     }
 
-    public function store(Request $request, WhatsAppSender $wa)
+    public function store(Request $request)
     {
         $data = $request->validate([
             'name'     => 'required|string|max:120',
@@ -37,24 +35,7 @@ class SignupController extends Controller
         Auth::login($user);
         $request->session()->regenerate();
 
-        // Fire off an OTP via WhatsApp
-        $this->sendInitialOtp($user, $wa);
-
-        return redirect()->route('phone.show')
-            ->with('flash', 'أهلًا بك ' . explode(' ', $user->name)[0] . ' 👋  بعتنالك كود تحقق على واتساب.');
-    }
-
-    private function sendInitialOtp(User $user, WhatsAppSender $wa): void
-    {
-        $code = $wa->generateOtp(5);
-        PhoneOtp::create([
-            'user_id'    => $user->id,
-            'phone'      => $user->phone,
-            'code'       => $code,
-            'expires_at' => now()->addMinutes(10),
-        ]);
-
-        $msg = "بنهاوي · كود التحقق:\n*{$code}*\n\nالكود ساري لمدة 10 دقايق.";
-        $wa->send($user->phone, $msg);
+        return redirect()->intended(route('home'))
+            ->with('flash', 'أهلًا بك في بنهاوي ' . explode(' ', $user->name)[0] . ' 👋');
     }
 }

@@ -1,426 +1,389 @@
 @extends('layouts.mobile')
 
-@section('title', 'الرئيسية · بنهاوي')
-@section('page-title', 'اكتشف بنها')
+@section('title', 'بنهاوي · خدمات بنها')
+@section('page-title', 'بنهاوي')
 
 @section('content')
 
-{{-- ── HERO STRIP (greeting + search) ───────────────────────── --}}
+{{-- ── HERO ─────────────────────────────────────────────────── --}}
 <div class="disc-hero">
     <div class="disc-hero-inner">
-        <div>
-            <div class="disc-greet">
-                @auth أهلًا، {{ explode(' ', auth()->user()->name)[0] }} 👋 @else أهلًا بك في بنهاوي 👋 @endauth
-            </div>
-            <div class="disc-sub">إيه اللي بتدور عليه في بنها النهارده؟</div>
-        </div>
-        <form method="get" action="{{ route('map') }}" class="disc-search">
-            <span style="color: var(--ink-4);"><x-icon name="search" :size="18"/></span>
-            <input type="text" name="q" placeholder="مطعم · كافيه · دكتور · صالون ...">
-            <a href="{{ route('map') }}" class="disc-search-map" aria-label="الخريطة">
-                <x-icon name="map" :size="16" stroke="white"/>
-            </a>
-        </form>
-        @if($activeOrder ?? null)
-            {{-- Logged in + has an in-flight order → show that specific order --}}
-            <a href="{{ route('track', ['code' => $activeOrder->code]) }}" class="disc-track-link disc-track-active">
-                <span class="disc-track-pulse"></span>
-                <span style="flex: 1;">
-                    طلبك <strong style="direction: ltr; display: inline-block;">{{ $activeOrder->code }}</strong>
-                    من <strong>{{ $activeOrder->business->name }}</strong>
-                    · <span style="color: var(--teal-600);">{{ $activeOrder->statusLabel() }}</span>
-                </span>
-                <x-icon name="chev-l" :size="12" stroke="#0D9488"/>
-            </a>
-        @elseif(! auth()->check())
-            {{-- Guest → generic entry point so they can still track via code --}}
-            <a href="{{ route('track') }}" class="disc-track-link">
-                <x-icon name="clock" :size="13" stroke="#0D9488"/>
-                <span style="flex: 1;">عندك طلب؟ <strong>تتبّع حالته من هنا</strong></span>
-                <x-icon name="chev-l" :size="12" stroke="#0D9488"/>
-            </a>
-        @endif
-        {{-- Logged-in users with no active order → no banner (intentional) --}}
+        @auth
+            <div class="disc-greet">أهلًا، {{ explode(' ', auth()->user()->name)[0] }} 👋</div>
+        @else
+            <div class="disc-greet">أهلًا بك في بنهاوي 👋</div>
+        @endauth
+        <h1 class="disc-headline">كل خدمات بنها في مكان واحد</h1>
+        <p class="disc-sub">شحن · صنايعية · مهام · مفقودات — كل اللي تحتاجه على بُعد ضغطة.</p>
+
+        <a href="{{ route('search') }}" class="disc-search">
+            <x-icon name="search" :size="16" stroke="#5E6A77"/>
+            <span>ابحث عن خدمة، شركة شحن، أو مهمة...</span>
+        </a>
     </div>
 </div>
 
-<div class="scroll disc-scroll">
+{{-- ── QUICK SECTIONS GRID ──────────────────────────────────── --}}
+<div style="padding: 12px 14px 0;">
+    <div class="quick-grid">
+        <a href="{{ route('shipping') }}" class="quick-tile" style="background: linear-gradient(135deg, rgba(13,148,136,.12), rgba(13,148,136,.02));">
+            <span class="quick-tile-ico" style="background: rgba(13,148,136,.18); color: var(--teal);">
+                <x-icon name="truck" :size="24" stroke="#0D9488"/>
+            </span>
+            <div class="quick-tile-title">شركات شحن</div>
+            <div class="quick-tile-sub">داخلي وخارجي</div>
+        </a>
 
-    {{-- ── CATEGORY TILES ───────────────────────────────────── --}}
-    <section class="disc-section">
-        <div class="disc-section-head">
-            <h2 class="disc-section-title">التصنيفات</h2>
+        <a href="{{ route('services') }}" class="quick-tile" style="background: linear-gradient(135deg, rgba(14,165,233,.12), rgba(14,165,233,.02));">
+            <span class="quick-tile-ico" style="background: rgba(14,165,233,.18); color: #0369A1;">
+                <x-icon name="briefcase" :size="22" stroke="#0369A1"/>
+            </span>
+            <div class="quick-tile-title">خدمات</div>
+            <div class="quick-tile-sub">صنايعية وحرفيين</div>
+        </a>
+
+        <a href="{{ route('tasks.index') }}" class="quick-tile" style="background: linear-gradient(135deg, rgba(245,158,11,.13), rgba(245,158,11,.02));">
+            <span class="quick-tile-ico" style="background: rgba(245,158,11,.18); color: #B45309;">
+                <x-icon name="task" :size="22" stroke="#B45309"/>
+            </span>
+            <div class="quick-tile-title">مهام</div>
+            <div class="quick-tile-sub">انشر طلب · أو ساعد</div>
+        </a>
+
+        <a href="{{ route('lost.index') }}" class="quick-tile" style="background: linear-gradient(135deg, rgba(220,38,38,.10), rgba(220,38,38,.02));">
+            <span class="quick-tile-ico" style="background: rgba(220,38,38,.14); color: #B91C1C;">
+                <x-icon name="search-loc" :size="22" stroke="#B91C1C"/>
+            </span>
+            <div class="quick-tile-title">مفقودات</div>
+            <div class="quick-tile-sub">ضايع · أو موجود</div>
+        </a>
+    </div>
+</div>
+
+{{-- ── SHIPPING SECTION ─────────────────────────────────────── --}}
+@if($shipping->count() > 0)
+    <div id="shipping" style="padding: 22px 14px 0; scroll-margin-top: 12px;">
+        <div class="section-head">
+            <div>
+                <div class="section-title">شركات شحن في بنها</div>
+                <div class="section-sub">اختار شركة موثوقة لشحن طلباتك</div>
+            </div>
+            <a href="{{ route('shipping') }}" class="section-more">عرض الكل ›</a>
         </div>
-        <div class="disc-cats">
-            @foreach($types as $t)
-                <a href="{{ route('search', ['type' => $t->slug]) }}" class="disc-cat">
-                    <span class="disc-cat-icon">
-                        <x-icon :name="$t->icon" :size="20" stroke="#0D9488"/>
-                    </span>
-                    <span class="disc-cat-name">{{ $t->name_ar }}</span>
+
+        <div class="biz-row">
+            @foreach($shipping as $b)
+                <a href="{{ route('business.show', $b) }}" class="biz-tile @if($b->isOnBusinessPlan()) is-promoted @endif">
+                    @if($b->isOnBusinessPlan())
+                        <span class="biz-tile-badge biz-tile-badge-business">★ مميّز</span>
+                    @elseif($b->isOnProPlan())
+                        <span class="biz-tile-badge biz-tile-badge-pro">PRO</span>
+                    @endif
+                    <div class="biz-tile-thumb ph ph-{{ $b->type?->slug ?? 'service' }}">
+                        @if($b->logo)
+                            <img src="{{ $b->logo }}" alt="" onerror="this.style.display='none'">
+                        @else
+                            <span>{{ mb_substr($b->name, 0, 2) }}</span>
+                        @endif
+                    </div>
+                    <div class="biz-tile-name">
+                        {{ Str::limit($b->name, 28) }}
+                        @if($b->isPlanVerified())<span class="biz-tile-verified" title="موثّق">✓</span>@endif
+                    </div>
+                    <div class="biz-tile-meta">
+                        <x-icon name="star-f" :size="11"/>
+                        {{ number_format($b->rating, 1) }}
+                        <span class="dot"></span>
+                        <span>{{ $b->reviews_count }} تقييم</span>
+                    </div>
                 </a>
             @endforeach
         </div>
-    </section>
+    </div>
+@endif
 
-    {{-- ── FEATURED CAROUSEL ────────────────────────────────── --}}
-    @if($featured->isNotEmpty())
-        <section class="disc-section">
-            <div class="disc-section-head">
-                <h2 class="disc-section-title">
-                    <span class="disc-badge">مميز</span>
-                    الأنشطة المختارة
-                </h2>
-                <a href="{{ route('search') }}" class="disc-section-link">عرض الكل</a>
+{{-- ── SERVICES SECTION ─────────────────────────────────────── --}}
+@if($services->count() > 0)
+    <div id="services" style="padding: 22px 14px 0; scroll-margin-top: 12px;">
+        <div class="section-head">
+            <div>
+                <div class="section-title">صنايعية وحرفيين</div>
+                <div class="section-sub">سباك · كهربائي · نجار · فني تكييف...</div>
             </div>
-            <div class="disc-rail">
-                @foreach($featured as $b)
-                    <a href="{{ route('business.show', $b) }}" class="disc-card">
-                        <div class="disc-card-cover ph ph-{{ $b->type->slug }}">
-                            <span class="disc-card-badge">مميز</span>
-                        </div>
-                        <div class="disc-card-body">
-                            <div class="disc-card-row">
-                                <span class="disc-card-name">{{ $b->name }}</span>
-                                <span class="stars"><x-icon name="star-f" :size="11"/> {{ number_format($b->rating, 1) }}</span>
-                            </div>
-                            <div class="disc-card-meta">{{ $b->category }}</div>
-                            <div class="disc-card-row" style="margin-top: 8px;">
-                                @if($b->isOpenNow())
-                                    <span class="chip open" style="padding: 1px 7px; font-size: 10px;">مفتوح</span>
-                                @else
-                                    <span class="chip closed" style="padding: 1px 7px; font-size: 10px;">مغلق</span>
-                                @endif
-                                @if($b->delivery)
-                                    <span class="label-meta">· توصيل</span>
-                                @endif
-                            </div>
-                        </div>
-                    </a>
-                @endforeach
-            </div>
-        </section>
-    @endif
+            <a href="{{ route('services') }}" class="section-more">عرض الكل ›</a>
+        </div>
 
-    {{-- ── OPEN NOW ─────────────────────────────────────────── --}}
-    @if($openNow->isNotEmpty())
-        <section class="disc-section">
-            <div class="disc-section-head">
-                <h2 class="disc-section-title">
-                    <span class="disc-pulse"></span>
-                    مفتوح الآن
-                </h2>
-                <a href="{{ route('search', ['filter' => 'open']) }}" class="disc-section-link">المزيد</a>
-            </div>
-            <div class="disc-list">
-                @foreach($openNow->take(4) as $b)
-                    <a href="{{ route('business.show', $b) }}" class="disc-row">
-                        <div class="ph ph-{{ $b->type->slug }}" style="width: 56px; height: 56px; flex-shrink: 0; font-size: 13px;">
-                            {{ mb_substr($b->name, 0, 2) }}
-                        </div>
-                        <div style="flex: 1; min-width: 0;">
-                            <div style="display: flex; justify-content: space-between; align-items: center;">
-                                <span class="label-strong">{{ $b->name }}</span>
-                                <span class="stars"><x-icon name="star-f" :size="10"/> {{ number_format($b->rating, 1) }}</span>
-                            </div>
-                            <div class="label-meta">{{ $b->category }}</div>
-                            <div style="display: flex; gap: 6px; margin-top: 4px; align-items: center;">
-                                <span class="chip open" style="padding: 1px 7px; font-size: 10px;">مفتوح</span>
-                                @if($b->delivery)<span class="label-meta">· توصيل</span>@endif
-                            </div>
-                        </div>
-                    </a>
-                @endforeach
-            </div>
-        </section>
-    @endif
+        <div class="biz-row">
+            @foreach($services as $b)
+                <a href="{{ route('business.show', $b) }}" class="biz-tile @if($b->isOnBusinessPlan()) is-promoted @endif">
+                    @if($b->isOnBusinessPlan())
+                        <span class="biz-tile-badge biz-tile-badge-business">★ مميّز</span>
+                    @elseif($b->isOnProPlan())
+                        <span class="biz-tile-badge biz-tile-badge-pro">PRO</span>
+                    @endif
+                    <div class="biz-tile-thumb ph ph-{{ $b->type?->slug ?? 'service' }}">
+                        @if($b->logo)
+                            <img src="{{ $b->logo }}" alt="" onerror="this.style.display='none'">
+                        @else
+                            <span>{{ mb_substr($b->name, 0, 2) }}</span>
+                        @endif
+                    </div>
+                    <div class="biz-tile-name">
+                        {{ Str::limit($b->name, 28) }}
+                        @if($b->isPlanVerified())<span class="biz-tile-verified" title="موثّق">✓</span>@endif
+                    </div>
+                    <div class="biz-tile-meta">
+                        <x-icon name="star-f" :size="11"/>
+                        {{ number_format($b->rating, 1) }}
+                        <span class="dot"></span>
+                        <span>{{ $b->reviews_count }} تقييم</span>
+                    </div>
+                </a>
+            @endforeach
+        </div>
+    </div>
+@endif
 
-    {{-- ── LATEST ───────────────────────────────────────────── --}}
-    @if($latest->isNotEmpty())
-        <section class="disc-section">
-            <div class="disc-section-head">
-                <h2 class="disc-section-title">آخر الإضافات</h2>
-                <a href="{{ route('search') }}" class="disc-section-link">عرض الكل</a>
-            </div>
-            <div class="disc-list">
-                @foreach($latest->take(4) as $b)
-                    <a href="{{ route('business.show', $b) }}" class="disc-row">
-                        <div class="ph ph-{{ $b->type->slug }}" style="width: 56px; height: 56px; flex-shrink: 0; font-size: 13px;">
-                            {{ mb_substr($b->name, 0, 2) }}
-                        </div>
-                        <div style="flex: 1; min-width: 0;">
-                            <div style="display: flex; justify-content: space-between; align-items: center;">
-                                <span class="label-strong">{{ $b->name }}</span>
-                                @if($b->is_verified)
-                                    <span class="chip teal" style="padding: 1px 7px; font-size: 10px;">موثّق</span>
-                                @endif
-                            </div>
-                            <div class="label-meta">{{ $b->category }} · {{ $b->created_at->diffForHumans() }}</div>
-                        </div>
-                    </a>
-                @endforeach
-            </div>
-        </section>
-    @endif
+{{-- ── TASKS BOARD ──────────────────────────────────────────── --}}
+<div style="padding: 24px 14px 0;">
+    <div class="section-head">
+        <div>
+            <div class="section-title">آخر المهام المنشورة</div>
+            <div class="section-sub">ساعد جارك واكسب · أو انشر طلبك</div>
+        </div>
+        <a href="{{ route('tasks.index') }}" class="section-more">عرض الكل ›</a>
+    </div>
 
-  
-    {{-- ── MERCHANT CTA (visitors only) ─────────────────────── --}}
-    @guest
-        <section class="disc-section">
-            <div class="disc-merch">
-                <div class="disc-merch-text">
-                    <span class="disc-merch-eyebrow">لأصحاب الأنشطة</span>
-                    <div class="disc-merch-title">عندك نشاط في بنها؟</div>
-                    <div class="disc-merch-sub">اعمله صفحة في دقيقتين واستقبل طلباتك على واتساب.</div>
+    @forelse($latestTasks as $task)
+        <a href="{{ route('tasks.show', $task) }}" class="task-row">
+            <div class="task-row-ico" style="background: rgba(245,158,11,.14); color: #B45309;">
+                <x-icon name="task" :size="16" stroke="#B45309"/>
+            </div>
+            <div style="flex: 1; min-width: 0;">
+                <div class="task-row-title">{{ $task->title }}</div>
+                <div class="task-row-meta">
+                    <span>{{ \App\Models\Task::CATEGORIES[$task->category] ?? '' }}</span>
+                    @if($task->location)
+                        <span class="dot"></span>
+                        <span>{{ $task->location }}</span>
+                    @endif
                 </div>
-                <a href="{{ route('register.step1') }}" class="btn btn-teal" style="padding: 11px 16px; font-size: 13px;">ابدأ مجانًا</a>
             </div>
-        </section>
-    @endguest
+            @if($task->budget)
+                <span class="task-row-budget">{{ number_format($task->budget) }} ج</span>
+            @endif
+        </a>
+    @empty
+        <div style="padding: 18px; text-align: center; color: var(--ink-3); background: #FAFBFC; border-radius: 12px; font-size: 13px;">
+            مفيش مهام دلوقتي.
+            <a href="{{ route('tasks.create') }}" style="color: var(--teal); font-weight: 800; margin-right: 4px;">انشر أول مهمة ›</a>
+        </div>
+    @endforelse
 </div>
+
+{{-- ── LOST & FOUND ─────────────────────────────────────────── --}}
+@if($latestLost->count() > 0)
+    <div style="padding: 24px 14px 0;">
+        <div class="section-head">
+            <div>
+                <div class="section-title">آخر المفقودات</div>
+                <div class="section-sub">ساعد جارك يلاقي حاجته</div>
+            </div>
+            <a href="{{ route('lost.index') }}" class="section-more">عرض الكل ›</a>
+        </div>
+
+        <div class="lost-row">
+            @foreach($latestLost as $item)
+                <a href="{{ route('lost.show', $item) }}" class="lost-tile">
+                    @if($item->image)
+                        <div class="lost-tile-img">
+                            <img src="{{ $item->image }}" alt="" loading="lazy" onerror="this.parentNode.style.background='#F1F4F7'; this.style.display='none'">
+                        </div>
+                    @else
+                        <div class="lost-tile-img lost-tile-placeholder">
+                            <x-icon name="search-loc" :size="22" stroke="#94A1AE"/>
+                        </div>
+                    @endif
+                    @if($item->kind === 'lost')
+                        <span class="lost-tile-pill is-lost">ضايع</span>
+                    @else
+                        <span class="lost-tile-pill is-found">موجود</span>
+                    @endif
+                    <div class="lost-tile-title">{{ Str::limit($item->title, 26) }}</div>
+                </a>
+            @endforeach
+        </div>
+    </div>
+@endif
+
+{{-- ── CTA: register your service ───────────────────────────── --}}
+<div style="padding: 28px 14px;">
+    <div class="register-cta">
+        <div style="flex: 1;">
+            <div style="font-weight: 900; font-size: 15px;">عندك شركة شحن أو خدمة؟</div>
+            <p style="font-size: 12.5px; color: rgba(255,255,255,.75); margin: 6px 0 0; line-height: 1.7;">سجّل دلوقتي وابقى ظاهر لآلاف المستخدمين في بنها.</p>
+        </div>
+        <a href="{{ route('pricing') }}" class="register-cta-btn">شوف الأسعار</a>
+    </div>
+</div>
+
+<style>
+.disc-hero { padding: 14px 14px 4px; }
+.disc-hero-inner {
+    background: linear-gradient(135deg, #001B2A 0%, #0E2E3F 100%);
+    color: white;
+    border-radius: 22px;
+    padding: 22px 20px 18px;
+    position: relative;
+    overflow: hidden;
+}
+.disc-hero-inner::after {
+    content: "";
+    position: absolute;
+    bottom: -60px;
+    left: -50px;
+    width: 180px;
+    height: 180px;
+    border-radius: 50%;
+    background: rgba(13,148,136,.18);
+}
+.disc-greet { font-size: 12px; font-weight: 700; color: rgba(255,255,255,.65); margin-bottom: 6px; position: relative; z-index: 1; }
+.disc-headline { font-size: 22px; font-weight: 900; letter-spacing: -.3px; margin: 0 0 6px; position: relative; z-index: 1; line-height: 1.35; }
+.disc-sub { font-size: 12.5px; color: rgba(255,255,255,.7); font-weight: 600; margin: 0; line-height: 1.7; position: relative; z-index: 1; }
+
+.disc-search {
+    display: flex; align-items: center; gap: 10px;
+    background: white; border-radius: 14px;
+    padding: 11px 14px; color: var(--ink-3);
+    text-decoration: none; font-size: 13px; font-weight: 600;
+    margin-top: 14px; position: relative; z-index: 1;
+    box-shadow: 0 6px 20px -8px rgba(0,0,0,.4);
+}
+
+.quick-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+.quick-tile {
+    display: block; padding: 14px;
+    border-radius: 14px; border: 1px solid var(--line);
+    text-decoration: none; color: var(--ink-1);
+    transition: transform .12s ease;
+}
+.quick-tile:active { transform: scale(.97); }
+.quick-tile-ico {
+    width: 42px; height: 42px; border-radius: 12px;
+    display: grid; place-items: center; margin-bottom: 10px;
+}
+.quick-tile-title { font-weight: 900; font-size: 14px; }
+.quick-tile-sub { font-size: 11.5px; color: var(--ink-3); font-weight: 700; margin-top: 2px; }
+
+.section-head {
+    display: flex; align-items: flex-end; justify-content: space-between;
+    margin-bottom: 10px; padding: 0 2px;
+}
+.section-title { font-weight: 900; font-size: 15px; }
+.section-sub { font-size: 11.5px; color: var(--ink-3); font-weight: 700; margin-top: 2px; }
+.section-more { font-size: 12px; font-weight: 800; color: var(--teal); text-decoration: none; }
+
+.biz-row {
+    display: flex; gap: 10px;
+    overflow-x: auto; scrollbar-width: none;
+    margin: 0 -14px; padding: 0 14px 4px;
+}
+.biz-row::-webkit-scrollbar { display: none; }
+.biz-tile {
+    position: relative;
+    flex-shrink: 0; width: 158px;
+    background: white; border: 1px solid var(--line); border-radius: 14px;
+    padding: 12px; text-decoration: none; color: var(--ink-1);
+}
+.biz-tile.is-promoted {
+    border-color: #F59E0B;
+    box-shadow: 0 8px 20px -10px rgba(245,158,11,.40);
+}
+.biz-tile-badge {
+    position: absolute;
+    top: 8px; right: 8px;
+    padding: 2px 7px;
+    border-radius: 6px;
+    font-size: 9.5px;
+    font-weight: 900;
+    letter-spacing: .3px;
+    z-index: 1;
+}
+.biz-tile-badge-business {
+    background: linear-gradient(135deg, #FBBF24, #F59E0B);
+    color: white;
+}
+.biz-tile-badge-pro {
+    background: rgba(13,148,136,.14);
+    color: var(--teal);
+}
+.biz-tile-verified {
+    display: inline-block;
+    color: var(--teal);
+    font-weight: 900;
+    margin-right: 2px;
+}
+.biz-tile-thumb {
+    width: 100%; aspect-ratio: 1; border-radius: 11px;
+    overflow: hidden; display: grid; place-items: center;
+    font-weight: 900; font-size: 18px; color: white; margin-bottom: 10px;
+}
+.biz-tile-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.biz-tile-name { font-weight: 800; font-size: 13px; line-height: 1.4; }
+.biz-tile-meta {
+    display: flex; align-items: center; gap: 5px;
+    font-size: 11px; color: var(--ink-3); font-weight: 700; margin-top: 6px;
+}
+.biz-tile-meta .dot { width: 3px; height: 3px; background: var(--ink-4); border-radius: 50%; }
+
+.task-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 12px; background: white; border: 1px solid var(--line);
+    border-radius: 12px; margin-bottom: 8px;
+    text-decoration: none; color: var(--ink-1);
+}
+.task-row-ico {
+    width: 32px; height: 32px; border-radius: 10px;
+    display: grid; place-items: center; flex-shrink: 0;
+}
+.task-row-title { font-weight: 800; font-size: 13.5px; line-height: 1.4; }
+.task-row-meta { font-size: 11px; color: var(--ink-3); font-weight: 700; margin-top: 4px; display: flex; align-items: center; gap: 6px; }
+.task-row-meta .dot { width: 3px; height: 3px; background: var(--ink-4); border-radius: 50%; }
+.task-row-budget { color: #047857; font-weight: 900; font-size: 12.5px; flex-shrink: 0; }
+
+.lost-row { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+.lost-tile {
+    position: relative; border-radius: 12px; overflow: hidden;
+    background: white; border: 1px solid var(--line);
+    text-decoration: none; color: var(--ink-1);
+}
+.lost-tile-img { width: 100%; aspect-ratio: 16/10; background: #F1F4F7; }
+.lost-tile-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.lost-tile-placeholder { display: grid; place-items: center; }
+.lost-tile-pill {
+    position: absolute; top: 8px; right: 8px;
+    padding: 3px 8px; border-radius: 7px;
+    font-size: 10.5px; font-weight: 800;
+}
+.lost-tile-pill.is-lost  { background: rgba(220,38,38,.94); color: white; }
+.lost-tile-pill.is-found { background: rgba(16,185,129,.94); color: white; }
+.lost-tile-title { padding: 9px 10px; font-weight: 800; font-size: 12.5px; line-height: 1.4; }
+
+.register-cta {
+    background: linear-gradient(135deg, #001B2A, #0E2E3F); color: white;
+    border-radius: 18px; padding: 18px;
+    display: flex; align-items: center; gap: 12px;
+    box-shadow: 0 10px 30px -10px rgba(0,27,42,.4);
+}
+.register-cta-btn {
+    background: var(--teal); color: white;
+    padding: 10px 16px; border-radius: 11px;
+    font-weight: 900; font-size: 12.5px; text-decoration: none;
+    white-space: nowrap;
+    box-shadow: 0 6px 16px -6px rgba(13,148,136,.6);
+    flex-shrink: 0;
+}
+</style>
 
 @include('partials.visitor-nav')
 @endsection
-
-@push('head')
-<style>
-/* ── Hero strip ──────────────────────────────────────────── */
-.disc-hero {
-    background: var(--surface);
-    padding: 16px 14px 18px;
-    border-bottom: 1px solid var(--line);
-    flex-shrink: 0;
-}
-.disc-hero-inner { display: flex; flex-direction: column; gap: 14px; }
-.disc-greet { font-weight: 900; font-size: 18px; color: var(--navy); letter-spacing: -.3px; }
-.disc-sub { font-size: 12px; color: var(--ink-3); font-weight: 600; margin-top: 2px; }
-.disc-search {
-    background: var(--gray-100);
-    border-radius: 14px;
-    padding: 10px 12px 10px 4px;
-    display: flex; gap: 10px; align-items: center;
-}
-.disc-search input { flex: 1; border: none; outline: none; background: transparent; font-size: 13px; font-weight: 700; color: var(--ink); }
-.disc-search input::placeholder { color: var(--ink-4); font-weight: 600; }
-.disc-search-map {
-    width: 36px; height: 36px; border-radius: 10px;
-    background: var(--teal); color: white;
-    display: grid; place-items: center; flex-shrink: 0;
-}
-
-/* Contextual active-order banner — only shown to logged-in users with an in-flight order */
-.disc-track-link {
-    display: flex; align-items: center; gap: 8px;
-    margin-top: 10px;
-    padding: 10px 12px; border-radius: 12px;
-    background: var(--teal-50); color: var(--teal-600);
-    font-size: 12px; font-weight: 700;
-    border: 1px solid var(--teal-100);
-}
-.disc-track-link strong { color: var(--navy); font-weight: 800; }
-.disc-track-link:hover { background: var(--teal-100); }
-
-.disc-track-pulse {
-    width: 8px; height: 8px; border-radius: 50%; background: var(--teal);
-    flex-shrink: 0;
-    animation: discTrackPulse 1.6s ease-out infinite;
-}
-@keyframes discTrackPulse {
-    0%   { box-shadow: 0 0 0 0 rgba(13,148,136,.6); }
-    100% { box-shadow: 0 0 0 10px rgba(13,148,136,0); }
-}
-
-/* ── Sections ──────────────────────────────────────────── */
-.disc-scroll { background: var(--gray-50); }
-.disc-section { padding: 18px 14px 6px; }
-.disc-section-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 12px; }
-.disc-section-title {
-    font-weight: 900; font-size: 15px; color: var(--navy);
-    display: flex; align-items: center; gap: 8px;
-}
-.disc-section-link { font-size: 11px; font-weight: 800; color: var(--teal); }
-.disc-badge {
-    background: var(--teal); color: white;
-    padding: 2px 8px; border-radius: 999px;
-    font-size: 10px; font-weight: 800;
-}
-.disc-pulse {
-    width: 8px; height: 8px; border-radius: 50%; background: var(--wa);
-    position: relative;
-    box-shadow: 0 0 0 4px rgba(37,211,102,.15);
-    animation: pulse 1.6s ease-out infinite;
-}
-@keyframes pulse {
-    0% { box-shadow: 0 0 0 0 rgba(37,211,102,.4); }
-    100% { box-shadow: 0 0 0 8px rgba(37,211,102,0); }
-}
-
-/* ── Categories ─────────────────────────────────────────── */
-.disc-cats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-.disc-cat {
-    background: white; border: 1px solid var(--line); border-radius: 14px;
-    padding: 14px 8px; display: flex; flex-direction: column;
-    align-items: center; gap: 6px; text-align: center;
-}
-.disc-cat-icon {
-    width: 40px; height: 40px; border-radius: 12px;
-    background: var(--teal-50); display: grid; place-items: center;
-}
-.disc-cat-name { font-weight: 800; font-size: 11px; color: var(--navy); line-height: 1.3; }
-
-/* ── Horizontal carousel ─────────────────────────────────── */
-.disc-rail {
-    display: flex; gap: 10px; overflow-x: auto;
-    padding-bottom: 4px;
-    margin: 0 -14px; padding-inline: 14px;
-    scrollbar-width: none;
-}
-.disc-rail::-webkit-scrollbar { display: none; }
-.disc-card {
-    flex-shrink: 0;
-    width: 220px;
-    background: white; border: 1px solid var(--line); border-radius: 16px;
-    overflow: hidden;
-}
-.disc-card-cover { height: 110px; position: relative; }
-.disc-card-badge {
-    position: absolute; top: 8px; right: 8px;
-    background: var(--teal); color: white;
-    padding: 2px 8px; border-radius: 999px;
-    font-size: 9px; font-weight: 800;
-}
-.disc-card-body { padding: 10px 12px 12px; }
-.disc-card-row { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
-.disc-card-name { font-weight: 800; font-size: 13px; color: var(--navy); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.disc-card-meta { font-size: 11px; color: var(--ink-3); font-weight: 600; margin-top: 2px; }
-
-/* ── Vertical list rows ──────────────────────────────────── */
-.disc-list { display: flex; flex-direction: column; gap: 8px; }
-.disc-row {
-    background: white; border: 1px solid var(--line); border-radius: 14px;
-    padding: 10px;
-    display: flex; gap: 12px; align-items: center;
-}
-
-/* ── Map teaser ──────────────────────────────────────────── */
-.disc-map-teaser {
-    position: relative;
-    display: block;
-    height: 140px; border-radius: 18px; overflow: hidden;
-    box-shadow: var(--shadow);
-}
-.disc-map-overlay { position: absolute; inset: 0; background: linear-gradient(135deg, rgba(0,27,42,.55), rgba(0,27,42,.85)); }
-.disc-map-content {
-    position: relative; height: 100%;
-    display: flex; align-items: center; gap: 14px;
-    padding: 0 18px; color: white;
-}
-.disc-map-icon {
-    width: 48px; height: 48px; border-radius: 14px;
-    background: rgba(13,148,136,.4); backdrop-filter: blur(8px);
-    display: grid; place-items: center;
-    flex-shrink: 0;
-}
-.disc-map-title { font-weight: 900; font-size: 15px; }
-.disc-map-sub { font-size: 11px; opacity: .8; font-weight: 600; margin-top: 2px; }
-.disc-map-cta {
-    display: inline-flex; align-items: center; gap: 4px;
-    background: rgba(255,255,255,.15); backdrop-filter: blur(8px);
-    padding: 8px 12px; border-radius: 10px;
-    font-size: 12px; font-weight: 800; margin-right: auto;
-}
-
-/* ── Merchant CTA inline ─────────────────────────────────── */
-.disc-merch {
-    background: var(--navy); color: white;
-    border-radius: 18px; padding: 16px;
-    display: flex; align-items: center; gap: 12px;
-    position: relative; overflow: hidden;
-}
-.disc-merch::before {
-    content: ''; position: absolute;
-    top: -40px; left: -40px;
-    width: 140px; height: 140px; border-radius: 50%;
-    background: rgba(13,148,136,.2); filter: blur(40px);
-    pointer-events: none;
-}
-.disc-merch-text { flex: 1; position: relative; }
-.disc-merch .btn { position: relative; }
-.disc-merch-eyebrow {
-    font-size: 10px; font-weight: 800; color: var(--teal);
-    text-transform: uppercase; letter-spacing: .5px;
-}
-.disc-merch-title { font-weight: 900; font-size: 15px; margin-top: 4px; }
-.disc-merch-sub { font-size: 11px; color: rgba(255,255,255,.7); font-weight: 600; margin-top: 4px; line-height: 1.6; }
-
-
-/* ═══ DESKTOP ≥ 1024px ════════════════════════════════════ */
-@media (min-width: 1024px) {
-    .disc-hero {
-        padding: 28px max(32px, calc((100% - var(--content-max)) / 2));
-        background: var(--surface);
-    }
-    .disc-hero-inner {
-        flex-direction: row;
-        align-items: center;
-        justify-content: space-between;
-        max-width: var(--content-max);
-        margin: 0 auto;
-    }
-    .disc-greet { font-size: 24px; }
-    .disc-sub { font-size: 13px; }
-    .disc-search { width: 440px; padding: 12px 14px 12px 6px; }
-    .disc-search input { font-size: 14px; }
-
-    .disc-section {
-        padding-left: max(32px, calc((100% - var(--content-max)) / 2));
-        padding-right: max(32px, calc((100% - var(--content-max)) / 2));
-        padding-top: 32px;
-        padding-bottom: 8px;
-    }
-    .disc-section-title { font-size: 20px; letter-spacing: -.3px; }
-    .disc-section-link { font-size: 13px; }
-
-    .disc-cats { grid-template-columns: repeat(6, 1fr); gap: 14px; }
-    .disc-cat { padding: 20px 12px; gap: 10px; }
-    .disc-cat-icon { width: 48px; height: 48px; }
-    .disc-cat-name { font-size: 13px; }
-
-    /* Featured grid (not horizontal scroll on desktop) */
-    .disc-rail {
-        display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        overflow: visible;
-        margin: 0; padding: 0;
-        gap: 16px;
-    }
-    .disc-card { width: auto; }
-    .disc-card-cover { height: 140px; }
-    .disc-card-body { padding: 14px; }
-    .disc-card-name { font-size: 14px; }
-
-    /* Lists become 2-column on desktop */
-    .disc-list {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 12px;
-    }
-    .disc-row { padding: 14px; }
-
-    /* Map teaser bigger */
-    .disc-map-teaser { height: 200px; }
-    .disc-map-title { font-size: 18px; }
-    .disc-map-sub { font-size: 13px; }
-
-    /* Merchant CTA inline more spacious */
-    .disc-merch { padding: 28px; }
-    .disc-merch-title { font-size: 20px; }
-    .disc-merch-sub { font-size: 13px; }
-}
-
-@media (min-width: 1440px) {
-    .disc-rail { grid-template-columns: repeat(4, 1fr); }
-    .disc-list { grid-template-columns: repeat(3, 1fr); }
-}
-</style>
-@endpush

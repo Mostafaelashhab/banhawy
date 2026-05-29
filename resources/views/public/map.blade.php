@@ -6,13 +6,13 @@
 @section('content')
 {{-- Search bar — submits back to the map so results stay on the map --}}
 <div style="padding: 6px 14px 8px;">
-    <form action="{{ route('map') }}" method="get">
+    <form action="{{ route('map') }}" method="get" id="map-form" autocomplete="off">
         @if($type)<input type="hidden" name="type" value="{{ $type->slug }}">@endif
         @if($openOnly)<input type="hidden" name="open" value="1">@endif
         <label class="field" style="cursor: text;">
             <span style="color: var(--ink-4);"><x-icon name="search" :size="18"/></span>
-            <input type="text" name="q" value="{{ $q }}" placeholder="بتدور على إيه في بنها؟">
-            <span style="color: var(--teal);"><x-icon name="pin" :size="18"/></span>
+            <input type="search" name="q" id="map-search" value="{{ $q }}" placeholder="بتدور على إيه في بنها؟" inputmode="search">
+            <span class="tiny" id="map-count" style="color: var(--ink-3);"></span>
         </label>
     </form>
 </div>
@@ -84,6 +84,14 @@
             <div class="label-meta" style="margin-top: 4px;">جرّب فلتر تاني أو شيل الفلتر.</div>
         </div>
     @endif
+
+    {{-- Realtime-search empty-state (shown by JS when text filter wipes all markers) --}}
+    <div id="map-empty" style="display: none; position: absolute; top: 60px; right: 14px; left: 14px; z-index: 500;
+                background: white; border-radius: 14px; padding: 14px;
+                box-shadow: var(--shadow); text-align: center;">
+        <div class="label-strong">مفيش نتائج تطابق بحثك</div>
+        <div class="label-meta" style="margin-top: 4px;">جرّب كلمة تانية أو شيل الفلتر.</div>
+    </div>
 
     {{-- Floating card — populated dynamically when a marker is tapped --}}
     @if($businesses->isNotEmpty())
@@ -210,7 +218,7 @@
         cardStatus.className = 'chip ' + (b.open ? 'open' : 'closed');
     }
 
-    var markers = [];
+    var markerEntries = [];   // { marker, biz, hay, visible }
     businesses.forEach(function (b) {
         var color = b.featured ? '#0D9488' : (b.open ? '#1E3A8A' : '#001B2A');
         var size  = b.featured ? 36 : 28;
@@ -231,7 +239,12 @@
             { offset: [0, -8] }
         );
         marker.on('click', function () { showInCard(b); });
-        markers.push(marker);
+        markerEntries.push({
+            marker: marker,
+            biz: b,
+            hay: ((b.name || '') + ' ' + (b.cat || '')).toLowerCase(),
+            visible: true,
+        });
     });
 
     // Seed the card with the first business (featured if any, else first)
@@ -240,10 +253,75 @@
         showInCard(seed);
     }
 
-    // Fit the map to the visible businesses (if any)
-    if (markers.length) {
-        var group = L.featureGroup(markers);
+    // Fit the map to the visible markers
+    function fitToVisible() {
+        var visible = markerEntries.filter(function (e) { return e.visible; }).map(function (e) { return e.marker; });
+        if (visible.length === 0) return;
+        var group = L.featureGroup(visible);
         map.fitBounds(group.getBounds().pad(0.25), { maxZoom: 16 });
+    }
+    fitToVisible();
+
+    // ── Realtime search: filter markers as the user types ──
+    function normalise(s) {
+        return (s || '').toString().trim().toLowerCase()
+            .replace(/[ً-ْٰ]/g, '')
+            .replace(/[إأآا]/g, 'ا')
+            .replace(/ى/g, 'ي')
+            .replace(/ة/g, 'ه');
+    }
+
+    var mapSearch  = document.getElementById('map-search');
+    var mapForm    = document.getElementById('map-form');
+    var mapCount   = document.getElementById('map-count');
+    var mapEmpty   = document.getElementById('map-empty');
+    var filterTimer = null;
+
+    function applyFilter() {
+        var q = normalise(mapSearch ? mapSearch.value : '');
+        var shown = 0;
+        markerEntries.forEach(function (e) {
+            var match = q === '' || normalise(e.hay).indexOf(q) !== -1;
+            if (match) {
+                if (!e.visible) { e.marker.addTo(map); e.visible = true; }
+                shown++;
+            } else if (e.visible) {
+                map.removeLayer(e.marker);
+                e.visible = false;
+            }
+        });
+
+        if (mapCount) mapCount.textContent = q ? (shown + ' نتيجة') : '';
+
+        // Show/hide the "no results" panel
+        if (mapEmpty) mapEmpty.style.display = (q && shown === 0) ? 'block' : 'none';
+
+        // Hide the bottom card if its business got filtered out
+        if (card && q !== '') {
+            var seed = markerEntries.find(function (e) { return e.visible; });
+            if (seed) showInCard(seed.biz);
+        }
+    }
+
+    if (mapForm) mapForm.addEventListener('submit', function (e) { e.preventDefault(); });
+
+    if (mapSearch) {
+        mapSearch.addEventListener('input', function () {
+            applyFilter();
+            clearTimeout(filterTimer);
+            filterTimer = setTimeout(function () {
+                var url = new URL(window.location.href);
+                if (mapSearch.value.trim() === '') url.searchParams.delete('q');
+                else url.searchParams.set('q', mapSearch.value);
+                window.history.replaceState(null, '', url);
+
+                // Re-fit map after the user finishes typing
+                fitToVisible();
+            }, 400);
+        });
+
+        // Apply once on load if there's a pre-filled value
+        if (mapSearch.value) applyFilter();
     }
 
     // Locate button → ask the device, pan there, drop a pulsing dot

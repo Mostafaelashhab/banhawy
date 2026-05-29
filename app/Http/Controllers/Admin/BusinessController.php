@@ -42,9 +42,10 @@ class BusinessController extends Controller
 
     public function edit(Business $business): View
     {
-        $business->load('type', 'owner');
+        $business->load('type', 'owner', 'plan');
         $types = BusinessType::orderBy('sort')->get();
-        return view('admin.businesses.edit', compact('business', 'types'));
+        $plans = \App\Models\Plan::orderBy('sort')->get();
+        return view('admin.businesses.edit', compact('business', 'types', 'plans'));
     }
 
     public function update(Request $request, Business $business): RedirectResponse
@@ -60,6 +61,7 @@ class BusinessController extends Controller
             'lat'          => 'required|numeric|between:-90,90',
             'lng'          => 'required|numeric|between:-180,180',
             'business_type_id' => 'required|exists:business_types,id',
+            'plan_id'      => 'nullable|exists:plans,id',
             'price_range'  => 'required|in:low,medium,high',
             'is_active'    => 'sometimes|boolean',
             'is_verified'  => 'sometimes|boolean',

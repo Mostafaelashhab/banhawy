@@ -53,14 +53,16 @@ class RegisterController extends Controller
     /* Step 2 — Business type */
     public function step2()
     {
-        $types = BusinessType::orderBy('sort')->get();
+        // Project is now focused on services — only allow shipping + service categories.
+        $types = BusinessType::whereIn('slug', ['shipping', 'service'])->orderBy('sort')->get();
         return view('auth.register.step2', compact('types'));
     }
 
     public function step2Store(Request $request)
     {
+        $allowedIds = BusinessType::whereIn('slug', ['shipping', 'service'])->pluck('id')->all();
         $data = $request->validate([
-            'business_type_id' => 'required|exists:business_types,id',
+            'business_type_id' => ['required', 'integer', 'in:'.implode(',', $allowedIds)],
         ]);
 
         session(['register.business_type_id' => $data['business_type_id']]);
@@ -72,7 +74,8 @@ class RegisterController extends Controller
     public function step3()
     {
         abort_unless(session('register.business_type_id'), 302, '', ['Location' => route('register.step2')]);
-        return view('auth.register.step3');
+        $type = BusinessType::find(session('register.business_type_id'));
+        return view('auth.register.step3', compact('type'));
     }
 
     public function step3Store(Request $request)
@@ -149,7 +152,7 @@ class RegisterController extends Controller
                 'tag'   => 'admin-biz-' . $business->id,
             ]);
         } catch (\Throwable $e) {
-            \Log::warning('[push admins biz] '.$e->getMessage());
+            \Illuminate\Support\Facades\Log::warning('[push admins biz] '.$e->getMessage());
         }
 
         return redirect()->route('register.success', $business);

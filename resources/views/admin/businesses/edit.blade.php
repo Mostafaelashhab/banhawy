@@ -83,7 +83,22 @@
             </div>
 
             <div class="a-card">
-                <div class="a-card-title" style="margin-bottom: 14px;">الحالة</div>
+                <div class="a-card-title" style="margin-bottom: 14px;">الحالة والخطة</div>
+
+                <div class="a-form-row">
+                    <label>الخطة المشترك بها</label>
+                    <select name="plan_id">
+                        <option value="">— مجاني (افتراضي) —</option>
+                        @foreach($plans as $plan)
+                            <option value="{{ $plan->id }}" @selected($business->plan_id === $plan->id)>
+                                {{ $plan->name }}{{ (int) $plan->price_monthly > 0 ? ' · ' . number_format($plan->price_monthly) . ' ج/شهر' : '' }}
+                            </option>
+                        @endforeach
+                    </select>
+                    <div style="font-size: 11px; color: var(--ink-4); margin-top: 4px;">
+                        ترقية الخطة تفعّل تلقائياً: علامة موثّق، صور غير محدودة، تنبيهات فورية، إلخ.
+                    </div>
+                </div>
 
                 <label style="display: flex; align-items: center; gap: 10px; padding: 10px; border: 1px solid var(--line); border-radius: 10px; margin-bottom: 8px; cursor: pointer;">
                     <input type="checkbox" name="is_active" value="1" @checked($business->is_active)>
@@ -95,15 +110,15 @@
                 <label style="display: flex; align-items: center; gap: 10px; padding: 10px; border: 1px solid var(--line); border-radius: 10px; margin-bottom: 8px; cursor: pointer;">
                     <input type="checkbox" name="is_verified" value="1" @checked($business->is_verified)>
                     <div>
-                        <div style="font-weight: 800; font-size: 13px;">موثّق</div>
-                        <div style="font-size: 11px; color: var(--ink-3);">علامة ✓ بجانب الاسم</div>
+                        <div style="font-weight: 800; font-size: 13px;">موثّق يدوياً</div>
+                        <div style="font-size: 11px; color: var(--ink-3);">يضاف على الـ Pro+ تلقائياً — استخدمه للتوثيق المجاني</div>
                     </div>
                 </label>
                 <label style="display: flex; align-items: center; gap: 10px; padding: 10px; border: 1px solid var(--line); border-radius: 10px; cursor: pointer;">
                     <input type="checkbox" name="is_featured" value="1" @checked($business->is_featured)>
                     <div>
-                        <div style="font-weight: 800; font-size: 13px;">مميّز</div>
-                        <div style="font-size: 11px; color: var(--ink-3);">يظهر في الأقسام المميزة</div>
+                        <div style="font-weight: 800; font-size: 13px;">مميّز يدوياً</div>
+                        <div style="font-size: 11px; color: var(--ink-3);">يضاف على Business plan تلقائياً</div>
                     </div>
                 </label>
 

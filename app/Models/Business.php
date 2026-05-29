@@ -29,6 +29,54 @@ class Business extends Model
     public function acceptsWhatsappBookings(): bool { return in_array($this->bookings_via, ['whatsapp', 'both']); }
     public function isWalkinOnly(): bool { return $this->bookings_via === 'walkin'; }
 
+    /* ── Plan tier helpers ─────────────────────────────────────────
+     * These power the actual feature gating: photo caps, verified
+     * badge, top-of-list sorting, push notifications, etc.
+     */
+    public function planSlug(): string
+    {
+        return $this->plan?->slug ?? 'free';
+    }
+
+    public function isOnFreePlan(): bool     { return $this->planSlug() === 'free'; }
+    public function isOnProPlan(): bool      { return $this->planSlug() === 'pro'; }
+    public function isOnBusinessPlan(): bool { return $this->planSlug() === 'business'; }
+    public function isOnPaidPlan(): bool     { return in_array($this->planSlug(), ['pro', 'business'], true); }
+
+    /** Numeric tier — useful for ORDER BY. higher = better placement */
+    public function planTier(): int
+    {
+        return match ($this->planSlug()) {
+            'business' => 3,
+            'pro'      => 2,
+            default    => 1,
+        };
+    }
+
+    /** How many photos this business can upload based on plan */
+    public function photosLimit(): int
+    {
+        return $this->isOnFreePlan() ? 3 : 30;
+    }
+
+    /** Is the verified ✓ badge earned by plan tier? */
+    public function isPlanVerified(): bool
+    {
+        return $this->isOnPaidPlan() || $this->is_verified;
+    }
+
+    /** Should the business get the "featured" promoted placement? */
+    public function isPlanFeatured(): bool
+    {
+        return $this->isOnBusinessPlan() || $this->is_featured;
+    }
+
+    /** Whether merchant gets push notifications on new orders/claims */
+    public function canReceivePushNotifications(): bool
+    {
+        return $this->isOnPaidPlan();
+    }
+
     protected $casts = [
         'hours'        => 'array',
         'images'       => 'array',

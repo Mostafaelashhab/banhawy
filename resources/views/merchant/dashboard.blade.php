@@ -87,22 +87,63 @@
         </a>
     </div>
 
-    {{-- Upgrade card (if not on top plan) --}}
-    @if($business->plan?->slug !== 'business')
-        <div style="background: white; border: 1px solid var(--teal-100); border-radius: 16px; padding: 12px; margin-bottom: 10px; position: relative; overflow: hidden;">
-            <div style="position: absolute; top: -20px; left: -20px; width: 90px; height: 90px; border-radius: 50%; background: var(--teal-50);"></div>
-            <div style="position: relative;">
-                <div style="display: flex; align-items: center; gap: 8px;">
-                    <span style="color: var(--teal); background: var(--teal-50); width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center;"><x-icon name="star" :size="16" stroke="#0D9488"/></span>
-                    <div>
-                        <div style="font-weight: 900; font-size: 13px; color: var(--navy);">
-                            @if($business->plan?->slug === 'pro') ارتقِ إلى Business @else فعّل خطة Pro @endif
-                        </div>
-                        <div class="label-meta">ظهور مميز · كوبونات · تحليلات</div>
-                    </div>
+    {{-- Current plan card ─────────────────────────────────── --}}
+    @php
+        $planSlug    = $business->planSlug();
+        $photosUsed  = is_array($business->images) ? count($business->images) : 0;
+        $photosLimit = $business->photosLimit();
+    @endphp
+
+    <div style="background: white; border: 1px solid var(--line); border-radius: 16px; padding: 14px; margin-bottom: 10px;">
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+            <span style="width: 38px; height: 38px; border-radius: 11px; display: grid; place-items: center;
+                @if($planSlug === 'business') background: linear-gradient(135deg, #FBBF24, #F59E0B); color: white;
+                @elseif($planSlug === 'pro')   background: var(--teal-50, rgba(13,148,136,.10)); color: var(--teal);
+                @else                          background: var(--gray-100, #F1F4F7); color: var(--ink-3);
+                @endif">
+                <x-icon name="star" :size="16" stroke="currentColor"/>
+            </span>
+            <div style="flex: 1;">
+                <div style="font-size: 11px; color: var(--ink-3); font-weight: 800;">خطتك الحالية</div>
+                <div style="font-weight: 900; font-size: 14px; color: var(--navy);">
+                    @if($planSlug === 'business') Business · مميّز
+                    @elseif($planSlug === 'pro')   Pro · موثّق ✓
+                    @else                          الخطة المجانية
+                    @endif
                 </div>
-                <button class="btn btn-teal btn-full" style="padding: 10px; font-size: 12px; margin-top: 10px;">ترقية الآن</button>
             </div>
+            @if($planSlug !== 'business')
+                <a href="{{ route('pricing') }}" class="btn btn-teal" style="padding: 8px 12px; font-size: 11.5px;">
+                    @if($planSlug === 'pro') ارقّى Business @else ترقية @endif
+                </a>
+            @endif
+        </div>
+
+        {{-- Plan limits at a glance --}}
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding-top: 10px; border-top: 1px dashed var(--line); font-size: 11.5px;">
+            <div>
+                <div style="color: var(--ink-3); font-weight: 700;">الصور</div>
+                <div style="font-weight: 900; margin-top: 2px;">{{ $photosUsed }} / {{ $photosLimit }}</div>
+            </div>
+            <div>
+                <div style="color: var(--ink-3); font-weight: 700;">الإشعارات</div>
+                <div style="font-weight: 900; margin-top: 2px;">
+                    @if($business->canReceivePushNotifications())
+                        <span style="color: #047857;">مفعّلة ✓</span>
+                    @else
+                        <span style="color: var(--ink-4);">للـ Pro+</span>
+                    @endif
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- Upsell hint for free users ─────────────────────────── --}}
+    @if($planSlug === 'free')
+        <div style="background: linear-gradient(135deg, rgba(13,148,136,.08), rgba(13,148,136,.02)); border: 1px solid rgba(13,148,136,.20); border-radius: 14px; padding: 12px; margin-bottom: 10px;">
+            <div style="font-weight: 900; font-size: 12.5px; margin-bottom: 4px;">🚀 اطلع لـ Pro بـ 99 ج/شهر</div>
+            <div style="font-size: 11.5px; color: var(--ink-3); line-height: 1.7;">صور غير محدودة · علامة موثّق ✓ · ظهور أعلى · تنبيهات فورية</div>
+            <a href="{{ route('pricing') }}" style="display: inline-block; margin-top: 8px; color: var(--teal); font-weight: 800; font-size: 12px;">شوف التفاصيل ›</a>
         </div>
     @endif
 

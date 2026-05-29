@@ -43,5 +43,11 @@
         @case('graduation') <path d="M22 10 12 4 2 10l10 6 10-6z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/> @break
         @case('flag')       <path d="M4 22V4a3 3 0 0 1 3-3h11l-3 5 3 5H7"/><line x1="4" y1="22" x2="4" y2="15"/> @break
         @case('logout')     <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/> @break
+        @case('truck')      <rect x="1" y="6" width="14" height="11" rx="1"/><path d="M15 9h4l3 4v4h-7"/><circle cx="6" cy="19" r="2"/><circle cx="18" cy="19" r="2"/> @break
+        @case('package')    <path d="M21 8 12 3 3 8v8l9 5 9-5z"/><path d="M3 8l9 5 9-5"/><line x1="12" y1="13" x2="12" y2="21"/> @break
+        @case('task')       <rect x="3" y="3" width="18" height="18" rx="2"/><polyline points="8 12 11 15 16 9"/> @break
+        @case('search-loc') <circle cx="11" cy="11" r="3"/><path d="M11 22s7-6 7-12a7 7 0 1 0-14 0c0 6 7 12 7 12z"/> @break
+        @case('question')   <circle cx="12" cy="12" r="10"/><path d="M9.5 9a2.5 2.5 0 0 1 5 0c0 1.5-2.5 2-2.5 3.5"/><line x1="12" y1="17" x2="12.01" y2="17"/> @break
+        @case('lost')       <circle cx="11" cy="11" r="7"/><line x1="16" y1="16" x2="21" y2="21"/><path d="M9 9a2 2 0 1 1 4 0c0 1.2-2 1.5-2 2.5"/><line x1="11" y1="14" x2="11.01" y2="14"/> @break
     @endswitch
 </svg>

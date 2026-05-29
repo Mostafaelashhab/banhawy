@@ -106,8 +106,13 @@
                 @else
                     <span class="chip closed" style="padding: 2px 7px; font-size: 10px;">مغلق</span>
                 @endif
-                @if($business->is_verified)
-                    <span class="chip teal" style="padding: 2px 7px; font-size: 10px;">موثّق</span>
+                @if($business->isPlanVerified())
+                    <span class="chip teal" style="padding: 2px 7px; font-size: 10px;">موثّق ✓</span>
+                @endif
+                @if($business->isOnBusinessPlan())
+                    <span class="chip" style="padding: 2px 7px; font-size: 10px; background: linear-gradient(135deg, #FBBF24, #F59E0B); color: white; font-weight: 800;">★ مميّز</span>
+                @elseif($business->isOnProPlan())
+                    <span class="chip" style="padding: 2px 7px; font-size: 10px; background: rgba(13,148,136,.14); color: var(--teal); font-weight: 800;">PRO</span>
                 @endif
             </div>
         </div>

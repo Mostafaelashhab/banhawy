@@ -28,8 +28,16 @@ class PhotosController extends Controller
         ]);
 
         $existing = is_array($business->images) ? $business->images : [];
-        if (count($existing) + count($request->file('photos')) > 30) {
-            return back()->with('flash_error', 'الحد الأقصى 30 صورة لكل متجر.');
+        $limit    = $business->photosLimit();           // 3 for free, 30 for pro/business
+        $incoming = count($request->file('photos'));
+
+        if (count($existing) + $incoming > $limit) {
+            if ($business->isOnFreePlan()) {
+                return back()->with('flash_error',
+                    "خطتك المجانية بتسمح بـ $limit صور بس. ارقّى لـ Pro للصور غير المحدودة."
+                );
+            }
+            return back()->with('flash_error', "الحد الأقصى $limit صورة لكل متجر.");
         }
 
         $dir = 'businesses/'.$business->id;

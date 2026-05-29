@@ -14,23 +14,28 @@ class SearchController extends Controller
         $q        = trim((string) $request->get('q', ''));
         $typeSlug = trim((string) $request->get('type', ''));
 
-        $type = $typeSlug !== ''
+        // Services-focused search: only shipping + service businesses are surfaced
+        $allowedTypeIds = BusinessType::whereIn('slug', ['shipping', 'service'])->pluck('id');
+
+        $type = ($typeSlug !== '' && in_array($typeSlug, ['shipping', 'service'], true))
             ? BusinessType::where('slug', $typeSlug)->first()
             : null;
 
-        $results = Business::with('type')
-            ->where('is_active', true)
-            ->when($type, fn ($b) => $b->where('business_type_id', $type->id))
-            ->when($q !== '', fn ($builder) => $builder->where(function ($w) use ($q) {
-                $w->where('name', 'like', "%{$q}%")
-                  ->orWhere('category', 'like', "%{$q}%")
-                  ->orWhere('description', 'like', "%{$q}%");
-            }))
-            ->orderByDesc('is_featured')
-            ->orderByDesc('rating')
+        // Note: we no longer filter by `q` server-side. The client-side realtime
+        // filter handles text matching, so the server always returns the full set
+        // for the chosen type — keeps the UX snappy as the user types/clears.
+        $results = Business::with('type', 'plan')
+            ->leftJoin('plans', 'businesses.plan_id', '=', 'plans.id')
+            ->where('businesses.is_active', true)
+            ->whereIn('businesses.business_type_id', $allowedTypeIds)
+            ->when($type, fn ($b) => $b->where('businesses.business_type_id', $type->id))
+            ->orderByRaw("CASE plans.slug WHEN 'business' THEN 3 WHEN 'pro' THEN 2 ELSE 1 END DESC")
+            ->orderByDesc('businesses.is_featured')
+            ->orderByDesc('businesses.rating')
+            ->select('businesses.*')
             ->get();
 
-        $types = BusinessType::orderBy('sort')->get();
+        $types = BusinessType::whereIn('slug', ['shipping', 'service'])->orderBy('sort')->get();
 
         return view('public.search', [
             'q'       => $q,

@@ -1,7 +1,6 @@
 <?php
 
 use App\Http\Controllers\Auth\LoginController;
-use App\Http\Controllers\Auth\PhoneVerificationController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\SignupController;
 use App\Http\Controllers\Public\AccountController;
@@ -15,7 +14,9 @@ use App\Http\Controllers\Merchant\QrController;
 use App\Http\Controllers\Merchant\SettingsController;
 use App\Http\Controllers\Public\BusinessController;
 use App\Http\Controllers\Public\ClaimController;
+use App\Http\Controllers\Public\LostItemController;
 use App\Http\Controllers\Public\ReportController;
+use App\Http\Controllers\Public\TaskController;
 use App\Http\Controllers\Public\DiscoverController;
 use App\Http\Controllers\Public\MapController;
 use App\Http\Controllers\Public\BookingController as PublicBookingController;
@@ -58,6 +59,30 @@ Route::view('/offline',  'public.offline')->name('offline');
 Route::get('/track',    TrackController::class)->name('track');
 Route::get('/map',      MapController::class)->name('map');
 Route::get('/search',   SearchController::class)->name('search');
+
+// Dedicated category landing pages
+Route::get('/shipping', [\App\Http\Controllers\Public\CategoryListingController::class, 'shipping'])->name('shipping');
+Route::get('/services', [\App\Http\Controllers\Public\CategoryListingController::class, 'services'])->name('services');
+
+// Pricing / monetization page (services-focused subscription model)
+Route::get('/pricing', function () {
+    $plans = \App\Models\Plan::orderBy('sort')->get();
+    return view('public.pricing', compact('plans'));
+})->name('pricing');
+
+// ── Tasks (مهام) ─────────────────────────────────────────────────
+Route::get('/tasks',           [TaskController::class, 'index'])->name('tasks.index');
+Route::get('/tasks/new',       [TaskController::class, 'create'])->name('tasks.create');
+Route::post('/tasks',          [TaskController::class, 'store'])->middleware('throttle:5,60')->name('tasks.store');
+Route::get('/tasks/{task}',    [TaskController::class, 'show'])->name('tasks.show');
+Route::patch('/tasks/{task}/close', [TaskController::class, 'close'])->middleware('auth')->name('tasks.close');
+
+// ── Lost & Found (مفقودات) ──────────────────────────────────────
+Route::get('/lost',             [LostItemController::class, 'index'])->name('lost.index');
+Route::get('/lost/new',         [LostItemController::class, 'create'])->name('lost.create');
+Route::post('/lost',            [LostItemController::class, 'store'])->middleware('throttle:5,60')->name('lost.store');
+Route::get('/lost/{lost}',      [LostItemController::class, 'show'])->name('lost.show');
+Route::patch('/lost/{lost}/resolve', [LostItemController::class, 'resolve'])->middleware('auth')->name('lost.resolve');
 
 Route::prefix('biz')->group(function () {
     Route::get('/{business:slug}',          [BusinessController::class, 'show'])->name('business.show');
@@ -106,10 +131,6 @@ Route::middleware('auth')->group(function () {
     // Visitor account page
     Route::get('/account', [AccountController::class, 'index'])->name('account');
 
-    // Phone (WhatsApp) verification — OTP via WAAPI
-    Route::get('/phone/verify',  [PhoneVerificationController::class, 'show'])->name('phone.show');
-    Route::post('/phone/send',   [PhoneVerificationController::class, 'send'])->middleware('throttle:6,60')->name('phone.send');
-    Route::post('/phone/verify', [PhoneVerificationController::class, 'verify'])->middleware('throttle:10,60')->name('phone.verify');
 
     // Web-push endpoints
     Route::post('/push/subscribe',   [\App\Http\Controllers\PushController::class, 'subscribe'])->name('push.subscribe');
@@ -173,5 +194,15 @@ Route::middleware('auth')->group(function () {
         // Reviews
         Route::get('/reviews',                      [\App\Http\Controllers\Admin\ReviewController::class, 'index'])->name('reviews.index');
         Route::delete('/reviews/{review}',          [\App\Http\Controllers\Admin\ReviewController::class, 'destroy'])->name('reviews.destroy');
+
+        // Tasks (مهام)
+        Route::get('/tasks',           [\App\Http\Controllers\Admin\TaskController::class, 'index'])->name('tasks.index');
+        Route::patch('/tasks/{task}',  [\App\Http\Controllers\Admin\TaskController::class, 'update'])->name('tasks.update');
+        Route::delete('/tasks/{task}', [\App\Http\Controllers\Admin\TaskController::class, 'destroy'])->name('tasks.destroy');
+
+        // Lost & found (مفقودات)
+        Route::get('/lost',          [\App\Http\Controllers\Admin\LostItemController::class, 'index'])->name('lost.index');
+        Route::patch('/lost/{lost}', [\App\Http\Controllers\Admin\LostItemController::class, 'update'])->name('lost.update');
+        Route::delete('/lost/{lost}',[\App\Http\Controllers\Admin\LostItemController::class, 'destroy'])->name('lost.destroy');
     });
 });

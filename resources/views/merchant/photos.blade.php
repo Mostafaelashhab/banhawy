@@ -20,6 +20,12 @@
 <div class="scroll" style="padding: 8px 14px 28px;">
 
     {{-- ── INTRO ─────────────────────────────────────────────── --}}
+    @php
+        $photoLimit = $business->photosLimit();
+        $photoUsed  = is_array($business->images) ? count($business->images) : 0;
+        $photoLeft  = max(0, $photoLimit - $photoUsed);
+    @endphp
+
     <div class="card" style="padding: 14px; margin-bottom: 12px; background: linear-gradient(135deg, rgba(13,148,136,.06), rgba(0,27,42,.02));">
         <div style="display: flex; align-items: center; gap: 12px;">
             <span style="width: 42px; height: 42px; border-radius: 13px; background: white; border: 1px solid rgba(13,148,136,.18); display: grid; place-items: center; flex-shrink: 0;">
@@ -27,11 +33,25 @@
                     <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>
                 </svg>
             </span>
-            <div>
-                <div class="label-strong">ارفع صور المتجر والمنيو</div>
-                <div class="label-meta" style="margin-top: 2px; line-height: 1.6;">حتى 10 صور في المرة · صور وضوحها أعلى تجيب زيارات أكثر.</div>
+            <div style="flex: 1;">
+                <div class="label-strong">ارفع صور المتجر</div>
+                <div class="label-meta" style="margin-top: 2px; line-height: 1.6;">
+                    استخدمت <strong>{{ $photoUsed }}/{{ $photoLimit }}</strong> صور
+                    @if($business->isOnFreePlan())
+                        · خطتك المجانية
+                    @endif
+                </div>
             </div>
         </div>
+
+        @if($business->isOnFreePlan() && $photoUsed >= $photoLimit)
+            <div style="margin-top: 12px; padding: 10px 12px; background: rgba(245,158,11,.10); border-radius: 10px; display: flex; align-items: center; gap: 10px;">
+                <div style="flex: 1; font-size: 12.5px; font-weight: 700; color: #92400E; line-height: 1.6;">
+                    وصلت للحد الأقصى. ارقّى لـ <strong>Pro</strong> لرفع صور غير محدودة.
+                </div>
+                <a href="{{ route('pricing') }}" class="btn btn-teal" style="padding: 8px 14px; font-size: 12px; flex-shrink: 0;">ترقية</a>
+            </div>
+        @endif
     </div>
 
     {{-- ── UPLOAD FORM ───────────────────────────────────────── --}}
@@ -66,7 +86,7 @@
         <div class="card" style="padding: 14px;">
             <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
                 <div class="label-strong">الصور المرفوعة ({{ count($images) }})</div>
-                <span class="label-meta">حد أقصى 30</span>
+                <span class="label-meta">حد أقصى {{ $photoLimit }}</span>
             </div>
 
             <div class="photos-grid">

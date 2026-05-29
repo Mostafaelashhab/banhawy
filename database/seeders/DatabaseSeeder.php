@@ -12,6 +12,7 @@ class DatabaseSeeder extends Seeder
             BusinessTypeSeeder::class,
             PlanSeeder::class,
             BusinessSeeder::class,
+            ServicesDemoSeeder::class,  
         ]);
     }
 }

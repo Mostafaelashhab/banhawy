@@ -15,18 +15,19 @@ class MapController extends Controller
         $typeSlug = trim((string) $request->get('type', ''));
         $openOnly = $request->boolean('open');
 
-        $type = $typeSlug !== ''
+        // Services-focused: only shipping + service businesses on the map
+        $allowedTypeIds = BusinessType::whereIn('slug', ['shipping', 'service'])->pluck('id');
+
+        $type = ($typeSlug !== '' && in_array($typeSlug, ['shipping', 'service'], true))
             ? BusinessType::where('slug', $typeSlug)->first()
             : null;
 
+        // Server returns all matching businesses for the type — text search is
+        // applied client-side in realtime so markers filter live as the user types.
         $businesses = Business::with('type')
             ->where('is_active', true)
+            ->whereIn('business_type_id', $allowedTypeIds)
             ->when($type, fn ($b) => $b->where('business_type_id', $type->id))
-            ->when($q !== '', fn ($b) => $b->where(function ($w) use ($q) {
-                $w->where('name', 'like', "%{$q}%")
-                  ->orWhere('category', 'like', "%{$q}%")
-                  ->orWhere('description', 'like', "%{$q}%");
-            }))
             ->orderByDesc('is_featured')
             ->orderByDesc('rating')
             ->get();
@@ -50,7 +51,7 @@ class MapController extends Controller
             'url'      => route('business.show', $b),
         ])->values()->toJson(JSON_UNESCAPED_UNICODE);
 
-        $types = BusinessType::orderBy('sort')->get();
+        $types = BusinessType::whereIn('slug', ['shipping', 'service'])->orderBy('sort')->get();
 
         return view('public.map', compact('businesses', 'businessesJson', 'types', 'type', 'openOnly', 'q'));
     }

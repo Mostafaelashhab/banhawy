@@ -291,8 +291,10 @@
 @php
     $route = request()->route()?->getName() ?? '';
     $counts = [
-        'claims_pending' => \App\Models\BusinessClaim::where('status', 'pending')->count(),
+        'claims_pending'  => \App\Models\BusinessClaim::where('status', 'pending')->count(),
         'reports_pending' => \App\Models\BusinessReport::where('status', 'pending')->count(),
+        'tasks_open'      => \App\Models\Task::where('status', 'open')->count(),
+        'lost_open'       => \App\Models\LostItem::where('status', 'open')->count(),
     ];
 @endphp
 
@@ -331,6 +333,20 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
             التقييمات
         </a>
+
+        <div class="a-nav-section">المجتمع</div>
+        <a href="{{ route('admin.tasks.index') }}" class="a-link @if(str_starts_with($route, 'admin.tasks')) is-active @endif">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><polyline points="8 12 11 15 16 9"/></svg>
+            المهام
+            @if($counts['tasks_open'] > 0)<span class="a-link-badge">{{ $counts['tasks_open'] }}</span>@endif
+        </a>
+        <a href="{{ route('admin.lost.index') }}" class="a-link @if(str_starts_with($route, 'admin.lost')) is-active @endif">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="3"/><path d="M11 22s7-6 7-12a7 7 0 1 0-14 0c0 6 7 12 7 12z"/></svg>
+            المفقودات
+            @if($counts['lost_open'] > 0)<span class="a-link-badge">{{ $counts['lost_open'] }}</span>@endif
+        </a>
+
+        <div class="a-nav-section">حسابات</div>
         <a href="{{ route('admin.users.index') }}" class="a-link @if(str_starts_with($route, 'admin.users')) is-active @endif">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
             المستخدمين

@@ -10,15 +10,15 @@
     <div class="title">{{ $type ? 'كل ' . $type->name_ar : 'نتائج البحث' }}</div>
 </div>
 
-<form method="get" action="{{ route('search') }}" style="padding: 0 14px 8px;">
+<form method="get" action="{{ route('search') }}" style="padding: 0 14px 8px;" id="search-form" autocomplete="off">
     {{-- preserve active type filter when refining by text --}}
     @if($type)
         <input type="hidden" name="type" value="{{ $type->slug }}">
     @endif
     <label class="field">
         <span style="color: var(--ink-4);"><x-icon name="search" :size="16"/></span>
-        <input type="text" name="q" value="{{ $q }}" placeholder="{{ $type ? 'ابحث داخل ' . $type->name_ar : 'ابحث عن مطعم أو خدمة' }}" autofocus>
-        <span class="tiny" style="color: var(--ink-3);">{{ $results->count() }} نتيجة</span>
+        <input type="search" name="q" id="search-input" value="{{ $q }}" placeholder="{{ $type ? 'ابحث داخل ' . $type->name_ar : 'ابحث عن خدمة أو شركة شحن' }}" autofocus inputmode="search">
+        <span class="tiny" style="color: var(--ink-3);" id="search-count">{{ $results->count() }} نتيجة</span>
     </label>
 </form>
 
@@ -42,9 +42,13 @@
 </div>
 
 <div class="scroll" style="padding: 6px 14px 14px;">
-    <div class="result-grid">
+    <div class="result-grid" id="search-results">
     @forelse($results as $b)
-        <div class="card card-pad" style="display: flex; gap: 10px;">
+        <div class="card card-pad search-item"
+             data-name="{{ Str::lower($b->name) }}"
+             data-cat="{{ Str::lower($b->category) }}"
+             data-haystack="{{ Str::lower($b->name . ' ' . $b->category . ' ' . ($b->description ?? '')) }}"
+             style="display: flex; gap: 10px;">
             <a href="{{ route('business.show', $b) }}" class="ph ph-{{ $b->type->slug }}" style="width: 64px; height: 64px; flex-shrink: 0; font-size: 14px;">
                 {{ mb_substr($b->name, 0, 2) }}
             </a>
@@ -80,7 +84,77 @@
         </div>
     @endforelse
     </div>
+
+    {{-- Empty state shown when realtime filter matches nothing --}}
+    <div id="search-empty" hidden class="card card-pad" style="text-align: center; padding: 32px 16px; color: var(--ink-3); margin-top: 4px;">
+        <div style="margin-bottom: 8px; color: var(--ink-4);"><x-icon name="search" :size="32"/></div>
+        <div class="label-strong">مفيش نتائج تطابق بحثك</div>
+        <div class="label-meta" style="margin-top: 4px;">جرّب كلمة تانية.</div>
+    </div>
 </div>
+
+<script>
+(function () {
+    var input    = document.getElementById('search-input');
+    var count    = document.getElementById('search-count');
+    var form     = document.getElementById('search-form');
+    var items    = Array.from(document.querySelectorAll('.search-item'));
+    var emptyEl  = document.getElementById('search-empty');
+    if (!input || !items.length) return;
+
+    // Stop the form from reloading when user hits Enter
+    form.addEventListener('submit', function (e) { e.preventDefault(); });
+
+    function normalise(s) {
+        return (s || '').toString().trim().toLowerCase()
+            // collapse Arabic diacritics + common variants so "احمد" and "أحمد" match
+            .replace(/[ً-ْٰ]/g, '')
+            .replace(/[إأآا]/g, 'ا')
+            .replace(/ى/g, 'ي')
+            .replace(/ة/g, 'ه');
+    }
+
+    function apply() {
+        var q = normalise(input.value);
+        var shown = 0;
+
+        if (q === '') {
+            items.forEach(function (el) { el.hidden = false; });
+            shown = items.length;
+        } else {
+            items.forEach(function (el) {
+                var hay = normalise(el.dataset.haystack);
+                var match = hay.indexOf(q) !== -1;
+                el.hidden = !match;
+                if (match) shown++;
+            });
+        }
+
+        count.textContent = shown + ' نتيجة';
+        emptyEl.hidden = shown !== 0;
+    }
+
+    // Keep URL in sync (no reload) so the user can share/bookmark/back-button
+    var syncUrlTimer = null;
+    function syncUrl() {
+        clearTimeout(syncUrlTimer);
+        syncUrlTimer = setTimeout(function () {
+            var url = new URL(window.location.href);
+            if (input.value.trim() === '') url.searchParams.delete('q');
+            else url.searchParams.set('q', input.value);
+            window.history.replaceState(null, '', url);
+        }, 250);
+    }
+
+    input.addEventListener('input', function () {
+        apply();
+        syncUrl();
+    });
+
+    // Run once on load — in case the input has a pre-filled value from old form post
+    if (input.value) apply();
+})();
+</script>
 
 @include('partials.visitor-nav')
 @endsection

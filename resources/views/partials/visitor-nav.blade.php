@@ -3,16 +3,16 @@
     <a href="{{ route('home') }}" class="bnav-item @if($route === 'home') active @endif">
         <x-icon name="home"/><span>الرئيسية</span>
     </a>
+    <a href="{{ route('tasks.index') }}" class="bnav-item @if(str_starts_with($route,'tasks.')) active @endif">
+        <x-icon name="task"/><span>مهام</span>
+    </a>
+    <a href="{{ route('lost.index') }}" class="bnav-item @if(str_starts_with($route,'lost.')) active @endif">
+        <x-icon name="lost"/><span>مفقودات</span>
+    </a>
     <a href="{{ route('map') }}" class="bnav-item @if($route === 'map') active @endif">
         <x-icon name="pin"/><span>الخريطة</span>
     </a>
-    <a href="{{ route('search') }}" class="bnav-item @if($route === 'search') active @endif">
-        <x-icon name="search"/><span>بحث</span>
-    </a>
     @auth
-        <a href="{{ route('favorites.index') }}" class="bnav-item @if(str_starts_with($route,'favorites')) active @endif">
-            <x-icon name="heart"/><span>المفضلة</span>
-        </a>
         @if(auth()->user()->isOwner())
             <a href="{{ route('merchant.dashboard') }}" class="bnav-item @if(str_starts_with($route,'merchant.')) active @endif">
                 <x-icon name="user"/><span>حسابي</span>
@@ -23,9 +23,6 @@
             </a>
         @endif
     @else
-        <a href="{{ route('login') }}" class="bnav-item">
-            <x-icon name="heart"/><span>المفضلة</span>
-        </a>
         <a href="{{ route('login') }}" class="bnav-item">
             <x-icon name="user"/><span>دخول</span>
         </a>
