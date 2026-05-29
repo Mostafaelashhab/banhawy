@@ -183,19 +183,18 @@ html::-webkit-scrollbar, body::-webkit-scrollbar { display: none; width: 0; heig
 
 .bnav-item {
     position: relative;
-    isolation: isolate;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 3px;
+    gap: 4px;
     color: var(--ink-4);
     font-size: 10.5px;
     font-weight: 700;
     min-width: 0;
     padding: 6px 2px 4px;
-    border-radius: 14px;
-    transition: color .18s ease, background .18s ease, transform .18s ease;
+    text-decoration: none;
+    transition: color .18s ease;
     -webkit-tap-highlight-color: transparent;
 }
 .bnav-item:active { transform: scale(0.94); }
@@ -204,31 +203,41 @@ html::-webkit-scrollbar, body::-webkit-scrollbar { display: none; width: 0; heig
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    line-height: 1;
+}
+
+/* Icon sits inside an icon-container — clean separation from label */
+.bnav-item .ico-wrap {
+    /* fallback layer; the actual svg is sized below */
+    display: grid;
+    place-items: center;
+    width: 22px;
+    height: 22px;
 }
 .bnav-item svg {
     width: 22px;
     height: 22px;
     flex-shrink: 0;
+    display: block;
     transition: transform .18s ease;
 }
 
-/* Active state: teal pill behind the icon */
-.bnav-item.active { color: var(--teal); }
-.bnav-item.active svg {
-    transform: translateY(-1px);
-    filter: drop-shadow(0 2px 6px rgba(13, 148, 136, 0.35));
+/* Active state: just bolder color + subtle scale on icon · clean iOS-like */
+.bnav-item.active {
+    color: var(--teal);
+    font-weight: 800;
 }
-.bnav-item.active::before {
+.bnav-item.active svg { transform: scale(1.08); }
+.bnav-item.active::after {
     content: "";
     position: absolute;
-    top: 2px;
+    bottom: -6px;
     left: 50%;
     transform: translateX(-50%);
-    width: 38px;
-    height: 26px;
-    border-radius: 13px;
-    background: rgba(13, 148, 136, 0.12);
-    z-index: -1;
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: var(--teal);
 }
 
 /* ── Misc atoms ─────────────────────────────────────────────────── */
