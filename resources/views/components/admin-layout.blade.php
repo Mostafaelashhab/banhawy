@@ -295,6 +295,7 @@
         'reports_pending' => \App\Models\BusinessReport::where('status', 'pending')->count(),
         'tasks_open'      => \App\Models\Task::where('status', 'open')->count(),
         'lost_open'       => \App\Models\LostItem::where('status', 'open')->count(),
+        'alerts_active'   => \App\Models\RoadAlert::active()->count(),
     ];
 @endphp
 
@@ -344,6 +345,11 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="3"/><path d="M11 22s7-6 7-12a7 7 0 1 0-14 0c0 6 7 12 7 12z"/></svg>
             المفقودات
             @if($counts['lost_open'] > 0)<span class="a-link-badge">{{ $counts['lost_open'] }}</span>@endif
+        </a>
+        <a href="{{ route('admin.alerts.index') }}" class="a-link @if(str_starts_with($route, 'admin.alerts')) is-active @endif">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            تنبيهات الطريق
+            @if($counts['alerts_active'] > 0)<span class="a-link-badge">{{ $counts['alerts_active'] }}</span>@endif
         </a>
 
         <div class="a-nav-section">حسابات</div>

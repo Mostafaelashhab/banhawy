@@ -9,7 +9,7 @@
     <div class="title">تسجيل الدخول</div>
 </div>
 
-<form method="post" action="{{ route('login.attempt') }}" style="padding: 24px 22px; flex: 1; display: flex; flex-direction: column;" autocomplete="on">
+<form method="post" action="{{ route('login.attempt') }}" style="padding: 24px 22px;" autocomplete="on">
     @csrf
 
     <img src="/icons/banhawy-mark.svg" alt="بنهاوي" width="64" height="64"
@@ -54,9 +54,7 @@
         </div>
     </div>
 
-    <div style="flex: 1; min-height: 24px;"></div>
-
-    <button type="submit" class="btn btn-navy btn-full" style="padding: 14px; font-size: 14.5px;">دخول</button>
+    <button type="submit" class="btn btn-navy btn-full" style="padding: 14px; font-size: 14.5px; margin-top: 22px;">دخول</button>
 
     <p class="tiny" style="text-align: center; color: var(--ink-3); margin-top: 14px;">
         مستخدم جديد؟

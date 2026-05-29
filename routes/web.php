@@ -16,6 +16,7 @@ use App\Http\Controllers\Public\BusinessController;
 use App\Http\Controllers\Public\ClaimController;
 use App\Http\Controllers\Public\LostItemController;
 use App\Http\Controllers\Public\ReportController;
+use App\Http\Controllers\Public\RoadAlertController;
 use App\Http\Controllers\Public\TaskController;
 use App\Http\Controllers\Public\DiscoverController;
 use App\Http\Controllers\Public\MapController;
@@ -58,6 +59,12 @@ Route::get('/discover', DiscoverController::class)->name('home');
 Route::view('/offline',  'public.offline')->name('offline');
 Route::get('/track',    TrackController::class)->name('track');
 Route::get('/map',      MapController::class)->name('map');
+
+// ── Road & safety alerts (أمان وطريق بنها) ──────────────────────
+Route::get('/alerts/active',              [RoadAlertController::class, 'active'])->name('alerts.active');
+Route::post('/alerts',                    [RoadAlertController::class, 'store'])->middleware('throttle:20,60')->name('alerts.store');
+Route::post('/alerts/{alert}/confirm',    [RoadAlertController::class, 'confirm'])->middleware('throttle:60,60')->name('alerts.confirm');
+Route::post('/alerts/{alert}/reject',     [RoadAlertController::class, 'reject'])->middleware('throttle:60,60')->name('alerts.reject');
 Route::get('/search',   SearchController::class)->name('search');
 
 // Dedicated category landing pages
@@ -204,5 +211,10 @@ Route::middleware('auth')->group(function () {
         Route::get('/lost',          [\App\Http\Controllers\Admin\LostItemController::class, 'index'])->name('lost.index');
         Route::patch('/lost/{lost}', [\App\Http\Controllers\Admin\LostItemController::class, 'update'])->name('lost.update');
         Route::delete('/lost/{lost}',[\App\Http\Controllers\Admin\LostItemController::class, 'destroy'])->name('lost.destroy');
+
+        // Road & safety alerts (أمان وطريق بنها)
+        Route::get('/alerts',                 [\App\Http\Controllers\Admin\RoadAlertController::class, 'index'])->name('alerts.index');
+        Route::patch('/alerts/{alert}',       [\App\Http\Controllers\Admin\RoadAlertController::class, 'update'])->name('alerts.update');
+        Route::delete('/alerts/{alert}',      [\App\Http\Controllers\Admin\RoadAlertController::class, 'destroy'])->name('alerts.destroy');
     });
 });

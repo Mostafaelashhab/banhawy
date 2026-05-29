@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Public;
 use App\Http\Controllers\Controller;
 use App\Models\Business;
 use App\Models\BusinessType;
+use App\Models\RoadAlert;
 use Illuminate\Http\Request;
 
 class MapController extends Controller
@@ -53,6 +54,47 @@ class MapController extends Controller
 
         $types = BusinessType::whereIn('slug', ['shipping', 'service'])->orderBy('sort')->get();
 
-        return view('public.map', compact('businesses', 'businessesJson', 'types', 'type', 'openOnly', 'q'));
+        // ── Road & safety alerts (community-reported) ────────────────
+        $voterHash = hash('sha256', ($request->ip() ?? '') . '|alert-vote');
+
+        $alerts = RoadAlert::active()
+            ->latest()
+            ->get();
+
+        $voterChoices = \App\Models\RoadAlertVote::whereIn('road_alert_id', $alerts->pluck('id'))
+            ->where('ip_hash', $voterHash)
+            ->pluck('kind', 'road_alert_id');
+
+        $alertsJson = $alerts->map(fn ($a) => [
+            'id'            => $a->id,
+            'type'          => $a->type,
+            'type_label'    => $a->typeLabel(),
+            'type_color'    => $a->typeColor(),
+            'type_icon'     => $a->typeIcon(),
+            'description'   => $a->description,
+            'lat'           => (float) $a->lat,
+            'lng'           => (float) $a->lng,
+            'status'        => $a->status,
+            'confirmations' => $a->confirmations_count,
+            'rejections'    => $a->rejections_count,
+            'is_confirmed'  => $a->isCommunityConfirmed(),
+            'expires_at'    => $a->expires_at?->toIso8601String(),
+            'created_at'    => $a->created_at?->toIso8601String(),
+            'age_minutes'   => $a->created_at?->diffInMinutes(now()),
+            'voter_choice'  => $voterChoices[$a->id] ?? null,
+        ])->values()->toJson(JSON_UNESCAPED_UNICODE);
+
+        // Alert types for the filter chips (preserve order)
+        $alertTypes = collect(RoadAlert::TYPES)->map(fn ($cfg, $slug) => [
+            'slug'  => $slug,
+            'label' => $cfg['chip_label'],
+            'color' => $cfg['color'],
+            'icon'  => $cfg['icon'],
+        ])->values();
+
+        return view('public.map', compact(
+            'businesses', 'businessesJson', 'types', 'type', 'openOnly', 'q',
+            'alertsJson', 'alertTypes'
+        ));
     }
 }
