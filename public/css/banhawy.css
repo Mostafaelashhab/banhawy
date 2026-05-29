@@ -145,9 +145,8 @@ html { overflow-x: hidden; }
     display: grid;
     grid-template-columns: repeat(5, 1fr);
     align-items: center;
-    padding: 6px 6px 2px;
-    /* Hug the bottom in PWA — only a tiny slice of safe-area so the bar doesn't float */
-    padding-bottom: max(2px, calc(env(safe-area-inset-bottom) * 0.25));
+    padding: 4px 6px 2px;
+    /* No safe-area buffer at all — icons hug the absolute bottom of the viewport */
     position: fixed;
     left: 0; right: 0;
     bottom: 0;
@@ -162,7 +161,7 @@ html { overflow-x: hidden; }
 
 /* Push page content above the fixed bnav so nothing hides behind it. */
 .shell:not(.is-landing) {
-    padding-bottom: calc(54px + max(2px, calc(env(safe-area-inset-bottom) * 0.25)));
+    padding-bottom: 56px;
 }
 /* Pages that explicitly opt out of a bnav (e.g. public business pages with sticky CTA) */
 .shell.no-bnav { padding-bottom: 0; }

@@ -14,7 +14,7 @@
     <div class="flash">{{ session('flash') }}</div>
 @endif
 
-<div class="scroll" style="padding: 14px 14px 14px; display: flex; flex-direction: column; flex: 1; min-height: 0;">
+<div class="scroll" style="padding: 14px 14px 0; display: flex; flex-direction: column; flex: 1; min-height: 0;">
 
     {{-- ── Profile card ───────────────────────────────────── --}}
     <div class="card" style="padding: 18px; display: flex; align-items: center; gap: 14px;">
