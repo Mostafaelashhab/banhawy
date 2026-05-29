@@ -145,8 +145,8 @@ html { overflow-x: hidden; }
     display: grid;
     grid-template-columns: repeat(5, 1fr);
     align-items: center;
-    padding: 4px 6px 2px;
-    /* No safe-area buffer at all — icons hug the absolute bottom of the viewport */
+    padding: 4px 6px 0;
+    height: 50px;
     position: fixed;
     left: 0; right: 0;
     bottom: 0;
@@ -161,7 +161,7 @@ html { overflow-x: hidden; }
 
 /* Push page content above the fixed bnav so nothing hides behind it. */
 .shell:not(.is-landing) {
-    padding-bottom: 56px;
+    padding-bottom: 50px;
 }
 /* Pages that explicitly opt out of a bnav (e.g. public business pages with sticky CTA) */
 .shell.no-bnav { padding-bottom: 0; }
@@ -187,12 +187,13 @@ html::-webkit-scrollbar, body::-webkit-scrollbar { display: none; width: 0; heig
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 4px;
+    gap: 2px;
     color: var(--ink-4);
-    font-size: 10.5px;
+    font-size: 10px;
     font-weight: 700;
     min-width: 0;
-    padding: 6px 2px 4px;
+    padding: 0 2px;
+    height: 100%;
     text-decoration: none;
     transition: color .18s ease;
     -webkit-tap-highlight-color: transparent;
