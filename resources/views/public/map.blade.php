@@ -121,6 +121,33 @@
         </button>
     </div>
 
+    {{-- ── Custom name prompt (replaces native prompt()) ───────── --}}
+    <div id="nav-name-modal" hidden
+         style="position: fixed; inset: 0; z-index: 1300;
+                background: rgba(0,27,42,.55);
+                display: flex; align-items: center; justify-content: center; padding: 24px;
+                backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);">
+        <div style="background: white; border-radius: 18px; padding: 20px 18px; width: 100%; max-width: 340px;
+                    box-shadow: 0 24px 48px -12px rgba(0,0,0,.4);">
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
+                <span id="nav-name-icon" style="width: 40px; height: 40px; border-radius: 12px; background: rgba(13,148,136,.14); color: var(--teal); display: grid; place-items: center; flex-shrink: 0;">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12L12 3l9 9"/><path d="M5 10v11h14V10"/></svg>
+                </span>
+                <div style="flex: 1; min-width: 0;">
+                    <div id="nav-name-title" style="font-weight: 900; font-size: 15px; color: var(--navy);">حفظ المكان</div>
+                    <div style="font-size: 11.5px; color: var(--ink-3); margin-top: 2px;">اكتب اسم مميّز للمكان (اختياري)</div>
+                </div>
+            </div>
+            <input type="text" id="nav-name-input" maxlength="40" autocomplete="off"
+                   placeholder="مثال: بيتي · شغلي · بيت ماما"
+                   style="width: 100%; padding: 11px 12px; border: 1.5px solid var(--ink-5); border-radius: 11px; font-size: 14px; font-family: inherit; outline: none;">
+            <div style="display: flex; gap: 8px; margin-top: 14px;">
+                <button type="button" id="nav-name-cancel" class="btn btn-line" style="flex: 1; padding: 11px; font-size: 13px;">إلغاء</button>
+                <button type="button" id="nav-name-ok" class="btn btn-teal" style="flex: 1.4; padding: 11px; font-size: 13px; font-weight: 900;">حفظ</button>
+            </div>
+        </div>
+    </div>
+
     {{-- ── Saved destinations sheet ───────────────────────────── --}}
     <div id="nav-saved-sheet" hidden
          style="position: fixed; inset: 0; z-index: 1100;
@@ -1800,16 +1827,54 @@ body.is-navigating .alert-marker.is-off-route {
                 if (saved) {
                     navTriggerFromSaved(saved);
                 } else {
-                    // Prompt to save current map center as this kind
+                    // Use our custom modal to prompt for the name, then save map center
                     if (NAV_STATE === 'idle') {
-                        var name = prompt('اكتب اسم ' + (kind === 'home' ? 'البيت' : 'الشغل') + ' (اختياري)') || (kind === 'home' ? 'البيت' : 'الشغل');
-                        var c = map.getCenter();
-                        navSetFavorite(kind, name, c.lat, c.lng);
-                        navRenderSavedSheet();
+                        var defaultName = kind === 'home' ? 'البيت' : 'الشغل';
+                        navOpenNameModal({
+                            title: 'حفظ ' + defaultName,
+                            placeholder: 'مثال: ' + (kind === 'home' ? 'بيتي · بيت ماما' : 'شغلي · مكتبي'),
+                            defaultValue: defaultName,
+                            onSave: function (name) {
+                                var c = map.getCenter();
+                                navSetFavorite(kind, name || defaultName, c.lat, c.lng);
+                                navRenderSavedSheet();
+                            }
+                        });
                     }
                 }
             };
         });
+    }
+
+    /* ── Custom name prompt modal ─────────────────────────────── */
+    function navOpenNameModal(opts) {
+        var modal = document.getElementById('nav-name-modal');
+        var input = document.getElementById('nav-name-input');
+        var title = document.getElementById('nav-name-title');
+        var ok    = document.getElementById('nav-name-ok');
+        var cncl  = document.getElementById('nav-name-cancel');
+        if (!modal) return;
+
+        title.textContent     = opts.title || 'حفظ المكان';
+        input.placeholder     = opts.placeholder || 'اكتب اسم المكان';
+        input.value           = opts.defaultValue || '';
+        modal.hidden          = false;
+        setTimeout(function () { input.focus(); input.select(); }, 50);
+
+        var cleanup = function () {
+            modal.hidden = true;
+            ok.onclick = cncl.onclick = input.onkeydown = null;
+        };
+        ok.onclick = function () {
+            var v = (input.value || '').trim();
+            cleanup();
+            opts.onSave?.(v);
+        };
+        cncl.onclick = function () { cleanup(); opts.onCancel?.(); };
+        input.onkeydown = function (e) {
+            if (e.key === 'Enter') { e.preventDefault(); ok.click(); }
+            if (e.key === 'Escape') { e.preventDefault(); cncl.click(); }
+        };
     }
     function navTriggerFromSaved(saved) {
         document.getElementById('nav-saved-sheet').hidden = true;
@@ -1981,46 +2046,6 @@ body.is-navigating .alert-marker.is-off-route {
             distEl.textContent = '';
         }
 
-        // ── Voice guidance ──
-        // Speak at 3 distance buckets: ≤500m, ≤200m, ≤50m (immediate)
-        // Use stepIdx + bucket as a dedupe key so we don't repeat.
-        if (d !== null && nextStep) {
-            var bucket = null;
-            if (d <= 50)       bucket = 'now';
-            else if (d <= 200) bucket = '200';
-            else if (d <= 500) bucket = '500';
-
-            if (bucket && (navVoice.lastTurn.stepIdx !== navCurrentStepIdx || navVoice.lastTurn.bucket !== bucket)) {
-                navVoice.lastTurn = { stepIdx: navCurrentStepIdx, bucket: bucket };
-                var text = navVoiceTextForStep(nextStep, d, bucket);
-                if (text) navVoice.speak(text, { interrupt: bucket === 'now' });
-            }
-        }
-    }
-
-    /* ── Translate a step into spoken Arabic text ───────────────── */
-    function navVoiceTextForStep(step, distMeters, bucket) {
-        if (!step) return '';
-        if (step.type === 'arrive') {
-            return bucket === 'now' ? 'وصلت إلى وجهتك' : 'اقتربت من الوجهة، على بعد ' + Math.round(distMeters) + ' متر';
-        }
-        var m = step.modifier || '';
-        var dir = '';
-        if (m.includes('right'))      dir = m === 'slight right' ? 'مايل يمين' : (m === 'sharp right' ? 'يمين قوي' : 'يمين');
-        else if (m.includes('left'))  dir = m === 'slight left'  ? 'مايل شمال' : (m === 'sharp left'  ? 'شمال قوي' : 'شمال');
-        else if (m === 'uturn')       dir = 'دوران لف كامل';
-        else if (m === 'straight')    dir = 'استمر';
-        else                          dir = 'استمر';
-
-        var prefix = (bucket === 'now')   ? 'دلوقتي '
-                   : (bucket === '200')   ? 'بعد مئتين متر '
-                                          : 'بعد ' + (distMeters > 1000 ? (distMeters/1000).toFixed(1) + ' كيلو ' : Math.round(distMeters / 100) * 100 + ' متر ');
-        if (step.type === 'roundabout' || step.type === 'rotary') return prefix + 'ادخل الدوران';
-        if (step.type === 'continue' || step.type === 'new name') return prefix + 'استمر دوغري';
-        if (step.type === 'merge')                                return prefix + 'اندمج ' + dir;
-        if (step.type === 'fork')                                 return prefix + 'خد التحويلة ' + dir;
-        if (step.type === 'on ramp' || step.type === 'off ramp')  return prefix + 'خد المخرج ' + dir;
-        return prefix + 'خد ' + dir;
     }
 
     /* ── Off-route detection → auto-recalculate ───────────────── */
@@ -2052,9 +2077,6 @@ body.is-navigating .alert-marker.is-off-route {
             clearTimeout(navOffRouteToast._t);
             navOffRouteToast._t = setTimeout(function () { navOffRouteToast.hidden = true; }, 3000);
         }
-        navVoice.speak('خرجت عن المسار. جاري إعادة الحساب.', { interrupt: true });
-        navVoice.lastTurn = { stepIdx: -1, bucket: '' }; // reset so new route announces
-
         navFetchRoute(navUserPos, navDest)
             .then(function (route) {
                 navRouteCoords    = route.coords;
@@ -2100,10 +2122,6 @@ body.is-navigating .alert-marker.is-off-route {
         navProximityToast.hidden = false;
         clearTimeout(navProximityToast._t);
         navProximityToast._t = setTimeout(function () { navProximityToast.hidden = true; }, 4500);
-
-        // Voice warning — rounded to nearest 50m for natural speech
-        var dRounded = Math.max(50, Math.round(dist / 50) * 50);
-        navVoice.speak('تنبيه! ' + (alert.type_label || 'خطر') + ' على بعد ' + dRounded + ' متر', { interrupt: false });
     }
 
     /* ── Update the bottom navigation card ────────────────────── */
@@ -2327,7 +2345,6 @@ body.is-navigating .alert-marker.is-off-route {
         navClearUserMarker();
         navResetAlertHighlight();
         navReleaseWakeLock();
-        if ('speechSynthesis' in window) speechSynthesis.cancel();
         navUserPos          = null;
         navDest             = null;
         navRouteCoords      = null;
