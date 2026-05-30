@@ -296,6 +296,7 @@
         'tasks_open'      => \App\Models\Task::where('status', 'open')->count(),
         'lost_open'       => \App\Models\LostItem::where('status', 'open')->count(),
         'alerts_active'   => \App\Models\RoadAlert::active()->count(),
+        'receipts_pending'=> \App\Models\PaymentReceipt::where('status', 'pending')->count(),
     ];
 @endphp
 
@@ -333,6 +334,11 @@
         <a href="{{ route('admin.reviews.index') }}" class="a-link @if(str_starts_with($route, 'admin.reviews')) is-active @endif">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
             التقييمات
+        </a>
+        <a href="{{ route('admin.receipts.index') }}" class="a-link @if(str_starts_with($route, 'admin.receipts')) is-active @endif">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+            إيصالات الدفع
+            @if($counts['receipts_pending'] > 0)<span class="a-link-badge">{{ $counts['receipts_pending'] }}</span>@endif
         </a>
 
         <div class="a-nav-section">المجتمع</div>

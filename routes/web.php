@@ -111,6 +111,13 @@ Route::prefix('biz')->group(function () {
     Route::post('/{business:slug}/report', [ReportController::class, 'store'])
         ->middleware('throttle:8,60')
         ->name('business.report');
+
+    Route::post('/{business:slug}/review', [\App\Http\Controllers\Public\ReviewController::class, 'store'])
+        ->middleware(['auth', 'throttle:10,60'])
+        ->name('business.review.store');
+    Route::delete('/{business:slug}/review/{review}', [\App\Http\Controllers\Public\ReviewController::class, 'destroy'])
+        ->middleware('auth')
+        ->name('business.review.destroy');
 });
 
 // ── Guest auth ─────────────────────────────────────────────────
@@ -168,6 +175,10 @@ Route::middleware('auth')->group(function () {
         Route::delete('/photos',           [MerchantPhotosController::class, 'destroy'])->name('photos.destroy');
         Route::post('/photos/cover',       [MerchantPhotosController::class, 'setCover'])->name('photos.cover');
         Route::post('/photos/logo',        [MerchantPhotosController::class, 'setLogo'])->name('photos.logo');
+
+        // Upgrade — pay by InstaPay / Vodafone Cash + receipt upload
+        Route::get('/upgrade',  [\App\Http\Controllers\Merchant\UpgradeController::class, 'show'])->name('upgrade');
+        Route::post('/upgrade', [\App\Http\Controllers\Merchant\UpgradeController::class, 'store'])->middleware('throttle:5,60')->name('upgrade.store');
     });
 
     // ── Admin panel ─────────────────────────────────────────────
@@ -201,6 +212,11 @@ Route::middleware('auth')->group(function () {
         // Reviews
         Route::get('/reviews',                      [\App\Http\Controllers\Admin\ReviewController::class, 'index'])->name('reviews.index');
         Route::delete('/reviews/{review}',          [\App\Http\Controllers\Admin\ReviewController::class, 'destroy'])->name('reviews.destroy');
+
+        // Payment receipts — approve/reject paid plan upgrades
+        Route::get('/receipts',                       [\App\Http\Controllers\Admin\PaymentReceiptController::class, 'index'])->name('receipts.index');
+        Route::post('/receipts/{receipt}/approve',    [\App\Http\Controllers\Admin\PaymentReceiptController::class, 'approve'])->name('receipts.approve');
+        Route::post('/receipts/{receipt}/reject',     [\App\Http\Controllers\Admin\PaymentReceiptController::class, 'reject'])->name('receipts.reject');
 
         // Tasks (مهام)
         Route::get('/tasks',           [\App\Http\Controllers\Admin\TaskController::class, 'index'])->name('tasks.index');

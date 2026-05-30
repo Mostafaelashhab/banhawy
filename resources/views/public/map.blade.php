@@ -110,6 +110,58 @@
             </span>
             حدد وجهتك
         </button>
+
+        <button id="nav-saved-btn" type="button" class="map-fab" style="background: white; color: var(--navy);">
+            <span class="map-fab-ico" style="background: rgba(245,158,11,.16); color: #B45309;">
+                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                    <polygon points="12 2 15 9 22 9 17 14 19 21 12 17 5 21 7 14 2 9 9 9 12 2"/>
+                </svg>
+            </span>
+            وجهاتي
+        </button>
+    </div>
+
+    {{-- ── Saved destinations sheet ───────────────────────────── --}}
+    <div id="nav-saved-sheet" hidden
+         style="position: fixed; inset: 0; z-index: 1100;
+                background: rgba(0,27,42,.55);
+                display: flex; align-items: flex-end; justify-content: center;
+                backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);">
+        <div style="background: white; width: 100%; max-width: 480px; border-radius: 22px 22px 0 0; padding: 18px 18px 24px;
+                    max-height: 75vh; overflow-y: auto;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px;">
+                <div style="font-weight: 900; font-size: 16px; color: var(--navy);">وجهاتي</div>
+                <button type="button" id="nav-saved-close" style="border: none; background: var(--gray-100); width: 32px; height: 32px; border-radius: 10px; font-weight: 900; color: var(--ink-2);">×</button>
+            </div>
+
+            <div style="font-size: 11.5px; color: var(--ink-3); font-weight: 800; margin-bottom: 8px;">المفضّلة</div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 18px;">
+                <button type="button" class="nav-saved-tile" data-kind="home">
+                    <span class="nav-saved-ico" style="background: rgba(13,148,136,.14); color: var(--teal);">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12L12 3l9 9"/><path d="M5 10v11h14V10"/></svg>
+                    </span>
+                    <span class="nav-saved-name">البيت</span>
+                    <span class="nav-saved-addr" id="nav-saved-home-addr">— مش محفوظ</span>
+                </button>
+                <button type="button" class="nav-saved-tile" data-kind="work">
+                    <span class="nav-saved-ico" style="background: rgba(14,165,233,.14); color: #0369A1;">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V4h8v3"/></svg>
+                    </span>
+                    <span class="nav-saved-name">الشغل</span>
+                    <span class="nav-saved-addr" id="nav-saved-work-addr">— مش محفوظ</span>
+                </button>
+            </div>
+
+            <div style="font-size: 11.5px; color: var(--ink-3); font-weight: 800; margin-bottom: 8px;">آخر الوجهات</div>
+            <div id="nav-saved-recent" style="display: flex; flex-direction: column; gap: 6px;"></div>
+            <div id="nav-saved-empty" hidden style="text-align: center; padding: 24px 8px; color: var(--ink-3); font-size: 12.5px;">
+                مفيش وجهات لسه — حدد أي وجهة وهتظهر هنا
+            </div>
+
+            <button type="button" id="nav-saved-pick" class="btn btn-teal btn-full" style="padding: 12px; font-size: 13px; margin-top: 16px;">
+                + حدد وجهة جديدة
+            </button>
+        </div>
     </div>
 
     {{-- ── Destination crosshair (shown while picking the destination) ── --}}
@@ -166,6 +218,39 @@
         </div>
     </div>
 
+    {{-- ── Arrival celebration screen ─────────────────────────── --}}
+    <div id="nav-arrived" hidden
+         style="position: fixed; inset: 0; z-index: 1200;
+                background: rgba(0,27,42,.92);
+                display: flex; align-items: center; justify-content: center; padding: 24px;
+                backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);">
+        <div style="background: white; border-radius: 22px; padding: 26px 22px; width: 100%; max-width: 360px; text-align: center;
+                    box-shadow: 0 32px 64px -16px rgba(0,0,0,.5);">
+            <div style="font-size: 56px; line-height: 1; margin-bottom: 8px;">🎉</div>
+            <div style="font-weight: 900; font-size: 22px; color: var(--navy); margin-bottom: 4px;">وصلت!</div>
+            <div style="color: var(--ink-3); font-size: 13px; margin-bottom: 22px;">رحلة سعيدة — تم الوصول بأمان</div>
+
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 20px;">
+                <div style="background: var(--gray-100); border-radius: 12px; padding: 12px 6px;">
+                    <div id="nav-arrived-dist" style="font-weight: 900; font-size: 16px; color: var(--teal);">—</div>
+                    <div style="font-size: 10.5px; color: var(--ink-3); font-weight: 800; margin-top: 4px;">المسافة</div>
+                </div>
+                <div style="background: var(--gray-100); border-radius: 12px; padding: 12px 6px;">
+                    <div id="nav-arrived-time" style="font-weight: 900; font-size: 16px; color: var(--navy);">—</div>
+                    <div style="font-size: 10.5px; color: var(--ink-3); font-weight: 800; margin-top: 4px;">الوقت</div>
+                </div>
+                <div style="background: var(--gray-100); border-radius: 12px; padding: 12px 6px;">
+                    <div id="nav-arrived-alerts" style="font-weight: 900; font-size: 16px; color: #F59E0B;">—</div>
+                    <div style="font-size: 10.5px; color: var(--ink-3); font-weight: 800; margin-top: 4px;">تنبيهات</div>
+                </div>
+            </div>
+
+            <button type="button" id="nav-arrived-close" class="btn btn-teal" style="width: 100%; padding: 13px; font-size: 14px; font-weight: 900;">
+                تمام
+            </button>
+        </div>
+    </div>
+
     {{-- ── Top maneuver banner (next turn, prominent for driver) ── --}}
     <div id="nav-maneuver-bar" hidden
          style="position: absolute; top: 12px; right: 12px; left: 12px; z-index: 590;
@@ -194,18 +279,32 @@
                 background: white; border-radius: 16px;
                 padding: 12px 14px;
                 box-shadow: 0 16px 36px -8px rgba(0,27,42,.28);">
-        <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px;">
-            <div style="display: flex; align-items: center; gap: 8px;">
-                <span style="font-size: 12px; font-weight: 800; color: var(--ink-3);">المتبقي</span>
-                <span id="nav-remaining" style="font-weight: 900; font-size: 14.5px; color: var(--navy);">—</span>
+        {{-- 3-stat row: ETA · Remaining · Speed --}}
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; margin-bottom: 10px; text-align: center;">
+            <div>
+                <div id="nav-eta" style="font-weight: 900; font-size: 16px; color: var(--navy); line-height: 1;">—</div>
+                <div style="font-size: 10px; font-weight: 800; color: var(--ink-3); margin-top: 3px;">الوصول</div>
             </div>
+            <div style="border-left: 1px solid var(--line); border-right: 1px solid var(--line);">
+                <div id="nav-remaining" style="font-weight: 900; font-size: 16px; color: var(--teal); line-height: 1;">—</div>
+                <div style="font-size: 10px; font-weight: 800; color: var(--ink-3); margin-top: 3px;">المتبقي</div>
+            </div>
+            <div>
+                <div id="nav-speed" style="font-weight: 900; font-size: 16px; color: var(--navy); line-height: 1;">0<span style="font-size: 10px; font-weight: 700; color: var(--ink-3);"> كم/س</span></div>
+                <div style="font-size: 10px; font-weight: 800; color: var(--ink-3); margin-top: 3px;">السرعة</div>
+            </div>
+        </div>
+
+        {{-- Alerts on route --}}
+        <div style="display: flex; align-items: center; justify-content: flex-start; gap: 8px; margin-bottom: 10px;">
             <div style="display: flex; align-items: center; gap: 5px; padding: 4px 9px; background: rgba(245,158,11,.12); border-radius: 8px;">
-                <span style="font-size: 14px;">⚠</span>
+                <span style="font-size: 13px;">⚠</span>
                 <span style="font-size: 11.5px; font-weight: 800; color: #92400E;">
                     <span id="nav-alerts-count">0</span> تنبيهات
                 </span>
             </div>
         </div>
+
         <div id="nav-nearest-alert" hidden
              style="display: flex; align-items: center; gap: 8px; padding: 8px 10px; background: #FAFBFC; border-radius: 10px; margin-bottom: 10px;">
             <span id="nav-nearest-emoji" style="font-size: 16px;">📷</span>
@@ -294,7 +393,7 @@
     {{-- Floating card — populated dynamically when a marker is tapped --}}
     @if($businesses->isNotEmpty())
         <a id="map-card" href="#"
-           style="position: fixed; right: 12px; left: 12px; bottom: calc(62px + max(2px, calc(env(safe-area-inset-bottom) * 0.25))); background: white; border-radius: 16px; padding: 10px; box-shadow: 0 12px 32px -8px rgba(0,27,42,.25), 0 4px 12px -4px rgba(0,27,42,.12); display: flex; gap: 10px; align-items: center; z-index: 500;">
+           style="position: fixed; right: 12px; left: 12px; bottom: calc(88px + max(14px, env(safe-area-inset-bottom))); background: white; border-radius: 16px; padding: 10px; box-shadow: 0 12px 32px -8px rgba(0,27,42,.25), 0 4px 12px -4px rgba(0,27,42,.12); display: flex; gap: 10px; align-items: center; z-index: 500;">
             <div id="map-card-thumb" class="ph" style="width: 52px; height: 52px; border-radius: 12px; flex-shrink: 0; font-size: 13px;"></div>
             <div style="flex: 1; min-width: 0;">
                 <div style="display: flex; align-items: center; justify-content: space-between; gap: 6px;">
@@ -496,6 +595,55 @@
 .nav-route-line {
     filter: drop-shadow(0 2px 6px rgba(13,148,136,.45));
 }
+
+/* ── Saved destination tiles ───────────────────────────────── */
+.nav-saved-tile {
+    background: var(--gray-100);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 12px 10px;
+    text-align: right;
+    cursor: pointer;
+    display: flex; flex-direction: column; gap: 4px;
+    transition: transform .12s ease, border-color .12s ease;
+}
+.nav-saved-tile:active { transform: scale(.97); }
+.nav-saved-tile.has-coords { border-color: var(--teal); }
+.nav-saved-ico {
+    width: 36px; height: 36px;
+    border-radius: 11px;
+    display: grid; place-items: center;
+    margin-bottom: 4px;
+}
+.nav-saved-name { font-weight: 900; font-size: 13px; color: var(--navy); }
+.nav-saved-addr { font-size: 11px; color: var(--ink-3); font-weight: 700; line-height: 1.4;
+                  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.nav-recent-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 12px;
+    background: var(--gray-100);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: transform .12s ease;
+}
+.nav-recent-row:active { transform: scale(.98); }
+.nav-recent-row .ph { font-size: 11px; }
+.nav-recent-row .recent-ico {
+    width: 32px; height: 32px;
+    border-radius: 10px;
+    background: rgba(13,148,136,.10); color: var(--teal);
+    display: grid; place-items: center;
+    flex-shrink: 0;
+}
+.nav-recent-row .recent-name { flex: 1; font-weight: 800; font-size: 12.5px;
+                               overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nav-recent-row .recent-del {
+    border: none; background: transparent; color: var(--ink-4);
+    width: 26px; height: 26px; border-radius: 8px;
+    font-weight: 900; font-size: 14px; cursor: pointer;
+}
+.nav-recent-row .recent-del:hover { background: rgba(220,38,38,.10); color: #DC2626; }
 
 /* ── Toast animations ──────────────────────────────────────── */
 @keyframes navToastIn {
@@ -1022,6 +1170,11 @@ body.is-navigating .alert-marker.is-off-route {
     });
     document.getElementById('alert-dialog-close')?.addEventListener('click', closeDialog);
 
+    // Auto-open dialog if arrived via ?report=1 (from discover safety card)
+    if (new URLSearchParams(window.location.search).get('report') === '1') {
+        setTimeout(function () { reportBtn?.click(); }, 300);
+    }
+
     // Step 1 → Step 2: pick a type, then close dialog to let user pan the map
     document.querySelectorAll('.alert-type-card').forEach(function (card) {
         card.addEventListener('click', function () {
@@ -1101,6 +1254,33 @@ body.is-navigating .alert-marker.is-off-route {
     var navOffRouteSince  = 0;      // timestamp when user went off-route
     var navIsRecalculating = false;
     var navAutoFollow      = true;  // map auto-pans to user position
+    var navTripStartTs    = 0;      // ms timestamp when navigation started
+    var navTripStartDist  = 0;      // total route distance at start (m)
+    var navMeters         = 0;      // total meters travelled
+    var navLastPos        = null;   // last user pos for incremental distance
+    var navCurrentSpeed   = 0;      // current speed in km/h (from GPS or computed)
+    var navHasArrived     = false;
+
+    /* ── Wake Lock: keep the screen ON during driving ───────────
+     * Requires HTTPS. Re-acquired on visibility change.
+     */
+    var navWakeLock = null;
+    async function navAcquireWakeLock() {
+        if (!('wakeLock' in navigator)) return;
+        try {
+            navWakeLock = await navigator.wakeLock.request('screen');
+            navWakeLock.addEventListener?.('release', function () { navWakeLock = null; });
+        } catch (e) { /* user denied or unsupported */ }
+    }
+    function navReleaseWakeLock() {
+        try { navWakeLock?.release(); } catch (e) {}
+        navWakeLock = null;
+    }
+    document.addEventListener('visibilitychange', function () {
+        if (document.visibilityState === 'visible' && NAV_STATE === 'active' && !navWakeLock) {
+            navAcquireWakeLock();
+        }
+    });
 
     var navStartBtn      = document.getElementById('nav-start-btn');
     var navCrosshair     = document.getElementById('nav-crosshair');
@@ -1260,29 +1440,63 @@ body.is-navigating .alert-marker.is-off-route {
     }
 
     function navManeuverIcon(step) {
-        if (!step) return '➡';
+        // Kept for back-compat; the visual rendering uses navRenderManeuverIcon (SVG).
+        return '⬆';
+    }
+
+    /* ── SVG-based maneuver icon: rotates a single arrow path per direction ─ */
+    function navManeuverSvgKey(step) {
+        if (!step) return { key: 'straight', tint: 'teal' };
         var m = step.modifier || '';
         switch (step.type) {
-            case 'arrive':              return '🏁';
-            case 'depart':              return '🚗';
+            case 'arrive':           return { key: 'flag',       tint: 'green' };
+            case 'depart':           return { key: 'straight',   tint: 'teal'  };
             case 'roundabout':
-            case 'rotary':              return '🔄';
+            case 'rotary':           return { key: 'roundabout', tint: 'teal'  };
             case 'continue':
-            case 'new name':            return '⬆';
+            case 'new name':         return { key: 'straight',   tint: 'teal'  };
             case 'turn':
-                if (m.includes('right')) return '➡';
-                if (m.includes('left'))  return '⬅';
-                if (m === 'uturn')       return '↩';
-                return '⬆';
+                if (m === 'uturn')                       return { key: 'uturn',         tint: 'amber' };
+                if (m === 'sharp right')                 return { key: 'sharp-right',   tint: 'teal'  };
+                if (m === 'sharp left')                  return { key: 'sharp-left',    tint: 'teal'  };
+                if (m === 'slight right')                return { key: 'slight-right',  tint: 'teal'  };
+                if (m === 'slight left')                 return { key: 'slight-left',   tint: 'teal'  };
+                if (m.includes('right'))                 return { key: 'right',         tint: 'teal'  };
+                if (m.includes('left'))                  return { key: 'left',          tint: 'teal'  };
+                return { key: 'straight', tint: 'teal' };
             case 'merge':
             case 'fork':
             case 'on ramp':
             case 'off ramp':
-                if (m.includes('right')) return '↗';
-                if (m.includes('left'))  return '↖';
-                return '⬆';
-            default:                    return '⬆';
+                if (m.includes('right')) return { key: 'slight-right', tint: 'teal' };
+                if (m.includes('left'))  return { key: 'slight-left',  tint: 'teal' };
+                return { key: 'straight', tint: 'teal' };
+            default:                  return { key: 'straight', tint: 'teal' };
         }
+    }
+
+    function navRenderManeuverIcon(el, step) {
+        var info = navManeuverSvgKey(step);
+        var paths = {
+            // Up arrow — pointing up
+            'straight':     '<path d="M16 4v22M8 12l8-8 8 8" />',
+            'right':        '<path d="M4 16h22M18 8l8 8-8 8" />',
+            'left':         '<path d="M28 16H6M14 8l-8 8 8 8" />',
+            'sharp-right':  '<path d="M6 24c0-10 8-18 18-18M16 10l8-4 4 8" />',
+            'sharp-left':   '<path d="M26 24c0-10-8-18-18-18M16 10l-8-4-4 8" />',
+            'slight-right': '<path d="M8 26l16-16M14 10h10v10" />',
+            'slight-left':  '<path d="M24 26L8 10M18 10H8v10" />',
+            'uturn':        '<path d="M8 26V12a6 6 0 0 1 12 0v8M14 20l-6 6-6-6" transform="translate(8 0)"/>',
+            'roundabout':   '<circle cx="16" cy="16" r="8" fill="none"/><path d="M16 4v8M28 16h-8M16 28v-8M4 16h8"/>',
+            'flag':         '<path d="M6 28V4M6 4h18l-4 6 4 6H6"/>',
+        };
+        var tint = info.tint === 'green' ? '#10B981'
+                 : info.tint === 'amber' ? '#F59E0B'
+                                         : '#0D9488';
+        el.style.background = tint;
+        el.innerHTML =
+            '<svg viewBox="0 0 32 32" width="32" height="32" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">'
+            + paths[info.key] + '</svg>';
     }
 
     /* ── Draw / clear route polyline + arrows ────────────────── */
@@ -1422,9 +1636,11 @@ body.is-navigating .alert-marker.is-off-route {
     });
     navConfirmPick?.addEventListener('click', function () {
         var c = map.getCenter();
-        navDest = { lat: c.lat, lng: c.lng };
+        navDest = { lat: c.lat, lng: c.lng, name: 'وجهة مخصصة' };
         navSetDestMarker(navDest);
         navBuildRoute();
+        // Save to recent destinations
+        navPushRecent('وجهة ' + new Date().toLocaleDateString('ar-EG'), c.lat, c.lng);
     });
 
     /* ── Build route from current GPS → destination ───────────── */
@@ -1471,9 +1687,17 @@ body.is-navigating .alert-marker.is-off-route {
     /* ── Start live navigation ────────────────────────────────── */
     navStartTrip?.addEventListener('click', function () {
         navSetState('active');
-        navCurrentStepIdx = 0;
-        navOffRouteSince  = 0;
-        navAutoFollow     = true;
+        navCurrentStepIdx   = 0;
+        navOffRouteSince    = 0;
+        navAutoFollow       = true;
+        navTripStartTs      = Date.now();
+        navMeters           = 0;
+        navHasArrived       = false;
+        navWarnedAlerts     = {};
+
+        // Keep the screen awake during the trip (needs a user gesture)
+        navAcquireWakeLock();
+
         navUpdateManeuverBar();
         navUpdateActiveBar();
         navStartWatch();
@@ -1484,15 +1708,178 @@ body.is-navigating .alert-marker.is-off-route {
         }
     });
 
+    /* ── Saved destinations (localStorage) ─────────────────────── */
+    var NAV_STORE_KEY = 'banhawy_nav_v1';
+    function navLoadStore() {
+        try {
+            var raw = localStorage.getItem(NAV_STORE_KEY);
+            if (!raw) return { home: null, work: null, recent: [] };
+            var s = JSON.parse(raw) || {};
+            return { home: s.home || null, work: s.work || null, recent: Array.isArray(s.recent) ? s.recent : [] };
+        } catch (e) { return { home: null, work: null, recent: [] }; }
+    }
+    function navSaveStore(s) {
+        try { localStorage.setItem(NAV_STORE_KEY, JSON.stringify(s)); } catch (e) {}
+    }
+    function navPushRecent(name, lat, lng) {
+        var s = navLoadStore();
+        // De-dupe by ~5m proximity
+        s.recent = s.recent.filter(function (r) {
+            return navDistanceMeters(r.lat, r.lng, lat, lng) > 25;
+        });
+        s.recent.unshift({ name: name || 'وجهة', lat: lat, lng: lng, ts: Date.now() });
+        s.recent = s.recent.slice(0, 6);
+        navSaveStore(s);
+    }
+    function navSetFavorite(kind, name, lat, lng) {
+        var s = navLoadStore();
+        s[kind] = { name: name, lat: lat, lng: lng, ts: Date.now() };
+        navSaveStore(s);
+    }
+    function navRenderSavedSheet() {
+        var s = navLoadStore();
+        var homeAddr = document.getElementById('nav-saved-home-addr');
+        var workAddr = document.getElementById('nav-saved-work-addr');
+        var homeTile = document.querySelector('.nav-saved-tile[data-kind="home"]');
+        var workTile = document.querySelector('.nav-saved-tile[data-kind="work"]');
+
+        if (s.home) {
+            homeAddr.textContent = s.home.name || 'محفوظ';
+            homeTile.classList.add('has-coords');
+        } else {
+            homeAddr.textContent = '— اضغط للحفظ';
+            homeTile.classList.remove('has-coords');
+        }
+        if (s.work) {
+            workAddr.textContent = s.work.name || 'محفوظ';
+            workTile.classList.add('has-coords');
+        } else {
+            workAddr.textContent = '— اضغط للحفظ';
+            workTile.classList.remove('has-coords');
+        }
+
+        var recentEl = document.getElementById('nav-saved-recent');
+        var emptyEl  = document.getElementById('nav-saved-empty');
+        recentEl.innerHTML = '';
+        if (!s.recent.length) {
+            emptyEl.hidden = false;
+            recentEl.hidden = true;
+            return;
+        }
+        emptyEl.hidden = true;
+        recentEl.hidden = false;
+        s.recent.forEach(function (r, idx) {
+            var row = document.createElement('div');
+            row.className = 'nav-recent-row';
+            row.innerHTML =
+                '<span class="recent-ico"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="11" r="3"/><path d="M12 22s8-7 8-12a8 8 0 1 0-16 0c0 5 8 12 8 12z"/></svg></span>' +
+                '<span class="recent-name">' + (r.name || 'وجهة') + '</span>' +
+                '<button class="recent-del" data-del="' + idx + '" aria-label="حذف">×</button>';
+            row.addEventListener('click', function (e) {
+                if (e.target.closest('.recent-del')) return;
+                navTriggerFromSaved(r);
+            });
+            recentEl.appendChild(row);
+        });
+        recentEl.querySelectorAll('.recent-del').forEach(function (btn) {
+            btn.addEventListener('click', function (e) {
+                e.stopPropagation();
+                var i = +btn.dataset.del;
+                var st = navLoadStore();
+                st.recent.splice(i, 1);
+                navSaveStore(st);
+                navRenderSavedSheet();
+            });
+        });
+
+        // Wire favorite tile clicks
+        [homeTile, workTile].forEach(function (tile) {
+            tile.onclick = function () {
+                var kind = tile.dataset.kind;
+                var saved = navLoadStore()[kind];
+                if (saved) {
+                    navTriggerFromSaved(saved);
+                } else {
+                    // Prompt to save current map center as this kind
+                    if (NAV_STATE === 'idle') {
+                        var name = prompt('اكتب اسم ' + (kind === 'home' ? 'البيت' : 'الشغل') + ' (اختياري)') || (kind === 'home' ? 'البيت' : 'الشغل');
+                        var c = map.getCenter();
+                        navSetFavorite(kind, name, c.lat, c.lng);
+                        navRenderSavedSheet();
+                    }
+                }
+            };
+        });
+    }
+    function navTriggerFromSaved(saved) {
+        document.getElementById('nav-saved-sheet').hidden = true;
+        // Jump straight to preview
+        if (!navUserPos) {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(function (pos) {
+                    navUserPos = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+                    navStartPreviewTo(saved);
+                }, function () { alert('احنا محتاجين موقعك عشان نحسبلك الطريق'); }, { enableHighAccuracy: true });
+            }
+        } else {
+            navStartPreviewTo(saved);
+        }
+    }
+    function navStartPreviewTo(saved) {
+        navDest = { lat: saved.lat, lng: saved.lng, name: saved.name || 'وجهة' };
+        navSetDestMarker(navDest);
+        navBuildRoute();   // reuses existing pipeline: preview state + fetch + fit
+    }
+
+    // Open/close sheet
+    document.getElementById('nav-saved-btn')?.addEventListener('click', function () {
+        navRenderSavedSheet();
+        document.getElementById('nav-saved-sheet').hidden = false;
+    });
+    document.getElementById('nav-saved-close')?.addEventListener('click', function () {
+        document.getElementById('nav-saved-sheet').hidden = true;
+    });
+    document.getElementById('nav-saved-pick')?.addEventListener('click', function () {
+        document.getElementById('nav-saved-sheet').hidden = true;
+        navStartBtn?.click();
+    });
+
+    /* ── Arrival screen dismiss ────────────────────────────────── */
+    document.getElementById('nav-arrived-close')?.addEventListener('click', function () {
+        document.getElementById('nav-arrived').hidden = true;
+        // Auto-end the trip on dismiss
+        navStopBtn?.click();
+    });
+
     function navStartWatch() {
         if (!navigator.geolocation) return;
         navStopWatch();
         navWatchId = navigator.geolocation.watchPosition(
             function (pos) {
-                navUserPos = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+                var newPos = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+
+                // Distance travelled increment (Haversine on each tick)
+                if (navUserPos) {
+                    var step = navDistanceMeters(navUserPos.lat, navUserPos.lng, newPos.lat, newPos.lng);
+                    // Filter out GPS jitter < 5m
+                    if (step >= 5) navMeters += step;
+                }
+
+                // Speed: prefer GPS-provided (m/s → km/h), else compute from deltas
+                if (typeof pos.coords.speed === 'number' && pos.coords.speed >= 0) {
+                    navCurrentSpeed = pos.coords.speed * 3.6;
+                } else if (navUserPos && navLastPos) {
+                    var dt = (Date.now() - (navLastPos.ts || 0)) / 1000;
+                    var dm = navDistanceMeters(navLastPos.lat, navLastPos.lng, newPos.lat, newPos.lng);
+                    if (dt > 0.5 && dt < 30) navCurrentSpeed = (dm / dt) * 3.6;
+                }
+                navLastPos = { lat: newPos.lat, lng: newPos.lng, ts: Date.now() };
+
+                navUserPos = newPos;
                 navSetUserMarker([navUserPos.lat, navUserPos.lng]);
                 navAutoFollowPan();
                 navAdvanceCurrentStep();
+                navCheckArrived();
                 navCheckProximity();
                 navCheckOffRoute();
                 navUpdateManeuverBar();
@@ -1501,6 +1888,28 @@ body.is-navigating .alert-marker.is-off-route {
             function () { /* silent fail — keep last known */ },
             { enableHighAccuracy: true, timeout: 15000, maximumAge: 5000 }
         );
+    }
+
+    /* ── Arrival detection ──────────────────────────────────── */
+    function navCheckArrived() {
+        if (navHasArrived || !navDest || !navUserPos) return;
+        var d = navDistanceMeters(navUserPos.lat, navUserPos.lng, navDest.lat, navDest.lng);
+        if (d <= 40) {
+            navHasArrived = true;
+            navShowArrivalScreen();
+        }
+    }
+
+    function navShowArrivalScreen() {
+        var screen = document.getElementById('nav-arrived');
+        if (!screen) return;
+        var elapsedMs   = Date.now() - (navTripStartTs || Date.now());
+        var elapsedMin  = Math.max(1, Math.round(elapsedMs / 60000));
+        var alertsHit   = Object.keys(navWarnedAlerts).length;
+        document.getElementById('nav-arrived-dist').textContent   = (navMeters >= 1000 ? (navMeters/1000).toFixed(1) + ' كم' : Math.round(navMeters) + ' متر');
+        document.getElementById('nav-arrived-time').textContent   = elapsedMin + ' دقيقة';
+        document.getElementById('nav-arrived-alerts').textContent = alertsHit;
+        screen.hidden = false;
     }
 
     /* ── Auto-follow: pan map to user position smoothly ───────── */
@@ -1557,12 +1966,13 @@ body.is-navigating .alert-marker.is-off-route {
         // Use the NEXT step's instruction (driver wants to know what's ahead)
         var nextStep = navRouteSteps[navCurrentStepIdx + 1] || step;
 
-        iconEl.textContent = navManeuverIcon(nextStep);
+        navRenderManeuverIcon(iconEl, nextStep);
         textEl.textContent = navManeuverText(nextStep);
 
         // Distance to that next maneuver
+        var d = null;
         if (navUserPos && nextStep) {
-            var d = navDistanceMeters(
+            d = navDistanceMeters(
                 navUserPos.lat, navUserPos.lng,
                 nextStep.location[0], nextStep.location[1]
             );
@@ -1570,6 +1980,47 @@ body.is-navigating .alert-marker.is-off-route {
         } else {
             distEl.textContent = '';
         }
+
+        // ── Voice guidance ──
+        // Speak at 3 distance buckets: ≤500m, ≤200m, ≤50m (immediate)
+        // Use stepIdx + bucket as a dedupe key so we don't repeat.
+        if (d !== null && nextStep) {
+            var bucket = null;
+            if (d <= 50)       bucket = 'now';
+            else if (d <= 200) bucket = '200';
+            else if (d <= 500) bucket = '500';
+
+            if (bucket && (navVoice.lastTurn.stepIdx !== navCurrentStepIdx || navVoice.lastTurn.bucket !== bucket)) {
+                navVoice.lastTurn = { stepIdx: navCurrentStepIdx, bucket: bucket };
+                var text = navVoiceTextForStep(nextStep, d, bucket);
+                if (text) navVoice.speak(text, { interrupt: bucket === 'now' });
+            }
+        }
+    }
+
+    /* ── Translate a step into spoken Arabic text ───────────────── */
+    function navVoiceTextForStep(step, distMeters, bucket) {
+        if (!step) return '';
+        if (step.type === 'arrive') {
+            return bucket === 'now' ? 'وصلت إلى وجهتك' : 'اقتربت من الوجهة، على بعد ' + Math.round(distMeters) + ' متر';
+        }
+        var m = step.modifier || '';
+        var dir = '';
+        if (m.includes('right'))      dir = m === 'slight right' ? 'مايل يمين' : (m === 'sharp right' ? 'يمين قوي' : 'يمين');
+        else if (m.includes('left'))  dir = m === 'slight left'  ? 'مايل شمال' : (m === 'sharp left'  ? 'شمال قوي' : 'شمال');
+        else if (m === 'uturn')       dir = 'دوران لف كامل';
+        else if (m === 'straight')    dir = 'استمر';
+        else                          dir = 'استمر';
+
+        var prefix = (bucket === 'now')   ? 'دلوقتي '
+                   : (bucket === '200')   ? 'بعد مئتين متر '
+                                          : 'بعد ' + (distMeters > 1000 ? (distMeters/1000).toFixed(1) + ' كيلو ' : Math.round(distMeters / 100) * 100 + ' متر ');
+        if (step.type === 'roundabout' || step.type === 'rotary') return prefix + 'ادخل الدوران';
+        if (step.type === 'continue' || step.type === 'new name') return prefix + 'استمر دوغري';
+        if (step.type === 'merge')                                return prefix + 'اندمج ' + dir;
+        if (step.type === 'fork')                                 return prefix + 'خد التحويلة ' + dir;
+        if (step.type === 'on ramp' || step.type === 'off ramp')  return prefix + 'خد المخرج ' + dir;
+        return prefix + 'خد ' + dir;
     }
 
     /* ── Off-route detection → auto-recalculate ───────────────── */
@@ -1601,6 +2052,9 @@ body.is-navigating .alert-marker.is-off-route {
             clearTimeout(navOffRouteToast._t);
             navOffRouteToast._t = setTimeout(function () { navOffRouteToast.hidden = true; }, 3000);
         }
+        navVoice.speak('خرجت عن المسار. جاري إعادة الحساب.', { interrupt: true });
+        navVoice.lastTurn = { stepIdx: -1, bucket: '' }; // reset so new route announces
+
         navFetchRoute(navUserPos, navDest)
             .then(function (route) {
                 navRouteCoords    = route.coords;
@@ -1646,22 +2100,47 @@ body.is-navigating .alert-marker.is-off-route {
         navProximityToast.hidden = false;
         clearTimeout(navProximityToast._t);
         navProximityToast._t = setTimeout(function () { navProximityToast.hidden = true; }, 4500);
+
+        // Voice warning — rounded to nearest 50m for natural speech
+        var dRounded = Math.max(50, Math.round(dist / 50) * 50);
+        navVoice.speak('تنبيه! ' + (alert.type_label || 'خطر') + ' على بعد ' + dRounded + ' متر', { interrupt: false });
     }
 
     /* ── Update the bottom navigation card ────────────────────── */
     function navUpdateActiveBar() {
         var countEl     = document.getElementById('nav-alerts-count');
         var remainingEl = document.getElementById('nav-remaining');
+        var etaEl       = document.getElementById('nav-eta');
+        var speedEl     = document.getElementById('nav-speed');
         var nearestRow  = document.getElementById('nav-nearest-alert');
 
         // Alerts on route count
         var count = navOnRouteIds.length;
         if (countEl) countEl.textContent = count;
 
-        // Remaining distance to destination (sum upcoming route segments)
-        if (remainingEl) {
-            var remaining = navComputeRemainingDistance();
-            remainingEl.textContent = navFormatDistance(remaining);
+        // Remaining distance + ETA
+        var remaining = navComputeRemainingDistance();
+        if (remainingEl) remainingEl.textContent = navFormatDistance(remaining);
+
+        if (etaEl) {
+            // ETA = now + (remaining / avg_speed)
+            // Use current speed when > 5 km/h, else fall back to 30 km/h urban avg
+            var speedKmh = navCurrentSpeed > 5 ? navCurrentSpeed : 30;
+            var minutes  = (remaining / 1000) / speedKmh * 60;
+            if (remaining > 0 && minutes < 240) {
+                var arriveAt = new Date(Date.now() + minutes * 60000);
+                var h = arriveAt.getHours(), m = arriveAt.getMinutes();
+                var ampm = h >= 12 ? 'م' : 'ص';
+                var h12  = ((h % 12) || 12);
+                etaEl.innerHTML = h12 + ':' + (m < 10 ? '0' : '') + m + '<span style="font-size: 10px; font-weight: 700; color: var(--ink-3);"> ' + ampm + '</span>';
+            } else {
+                etaEl.textContent = '—';
+            }
+        }
+
+        if (speedEl) {
+            var sp = Math.max(0, Math.round(navCurrentSpeed));
+            speedEl.innerHTML = sp + '<span style="font-size: 10px; font-weight: 700; color: var(--ink-3);"> كم/س</span>';
         }
 
         // Nearest alert info
@@ -1847,6 +2326,8 @@ body.is-navigating .alert-marker.is-off-route {
         navClearDestMarker();
         navClearUserMarker();
         navResetAlertHighlight();
+        navReleaseWakeLock();
+        if ('speechSynthesis' in window) speechSynthesis.cancel();
         navUserPos          = null;
         navDest             = null;
         navRouteCoords      = null;

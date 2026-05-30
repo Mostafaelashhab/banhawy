@@ -76,8 +76,7 @@
                     اتصل · {{ $item->contact_phone }}
                 </a>
                 @php
-                    $waNum = preg_replace('/[^\d]/', '', $item->contact_phone);
-                    if (str_starts_with($waNum, '0') && strlen($waNum) === 11) $waNum = '20' . substr($waNum, 1);
+                    $waNum = \App\Support\Phone::forWhatsapp($item->contact_phone);
                     $waMsg = rawurlencode("السلام عليكم، شفت بلاغ \"" . $item->title . "\" على بنهاوي");
                 @endphp
                 <a href="https://wa.me/{{ $waNum }}?text={{ $waMsg }}" target="_blank" class="btn btn-wa" style="padding: 12px; font-size: 13px; justify-content: center;">

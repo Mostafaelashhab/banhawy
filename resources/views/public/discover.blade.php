@@ -216,6 +216,58 @@
     </div>
 @endif
 
+{{-- ── ROAD SAFETY (السواقة بأمان) ───────────────────────────── --}}
+<div style="padding: 22px 14px 0;">
+    <div class="safety-card">
+        <div class="safety-card-bg"></div>
+
+        <div class="safety-head">
+            <div class="safety-pulse">
+                <span class="safety-pulse-dot"></span>
+                <span class="safety-pulse-ring"></span>
+            </div>
+            <div style="flex: 1;">
+                <div class="safety-title">السواقة بأمان</div>
+                <div class="safety-sub">تنبيهات الطريق لحظة بلحظة في بنها</div>
+            </div>
+        </div>
+
+        <div class="safety-stats">
+            <div class="safety-stat">
+                <div class="safety-stat-num">{{ $alertsActive }}</div>
+                <div class="safety-stat-lbl">تنبيه نشط</div>
+            </div>
+            <div class="safety-stat-divider"></div>
+            <div class="safety-stat">
+                <div class="safety-stat-num">{{ $alertsToday }}</div>
+                <div class="safety-stat-lbl">النهاردة</div>
+            </div>
+            <div class="safety-stat-divider"></div>
+            <div class="safety-stat">
+                <div class="safety-stat-num" style="font-size: 18px;">⚡</div>
+                <div class="safety-stat-lbl">فوري</div>
+            </div>
+        </div>
+
+        <div class="safety-types">
+            <span class="safety-type" style="background: rgba(220,38,38,.16); color: #FCA5A5;">⚠️ حوادث</span>
+            <span class="safety-type" style="background: rgba(245,158,11,.16); color: #FCD34D;">🚧 حفر</span>
+            <span class="safety-type" style="background: rgba(14,165,233,.16); color: #7DD3FC;">📷 رادارات</span>
+            <span class="safety-type" style="background: rgba(124,58,237,.16); color: #C4B5FD;">🚦 زحمة</span>
+        </div>
+
+        <div class="safety-actions">
+            <a href="{{ route('map') }}" class="safety-btn safety-btn-primary">
+                <x-icon name="pin" :size="14" stroke="white"/>
+                افتح الخريطة
+            </a>
+            <a href="{{ route('map') }}?report=1" class="safety-btn safety-btn-ghost">
+                + بلّغ عن تنبيه
+            </a>
+        </div>
+    </div>
+</div>
+
 {{-- ── CTA: register your service ───────────────────────────── --}}
 <div style="padding: 28px 14px;">
     <div class="register-cta">
@@ -382,6 +434,106 @@
     white-space: nowrap;
     box-shadow: 0 6px 16px -6px rgba(13,148,136,.6);
     flex-shrink: 0;
+}
+
+/* ── السواقة بأمان · road safety promo card ───────────────── */
+.safety-card {
+    position: relative;
+    background: linear-gradient(135deg, #0F172A 0%, #1E293B 60%, #0E2E3F 100%);
+    color: white;
+    border-radius: 20px;
+    padding: 18px;
+    overflow: hidden;
+    box-shadow: 0 18px 38px -14px rgba(15,23,42,.5), 0 4px 12px -4px rgba(15,23,42,.3);
+}
+.safety-card-bg {
+    position: absolute;
+    top: -50px; left: -50px;
+    width: 200px; height: 200px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(220,38,38,.20) 0%, transparent 70%);
+    filter: blur(20px);
+    pointer-events: none;
+}
+.safety-head {
+    display: flex; align-items: center; gap: 12px;
+    margin-bottom: 14px;
+    position: relative;
+}
+.safety-pulse {
+    width: 44px; height: 44px;
+    border-radius: 14px;
+    background: rgba(220,38,38,.18);
+    display: grid; place-items: center;
+    position: relative;
+    flex-shrink: 0;
+}
+.safety-pulse-dot {
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    background: #EF4444;
+    box-shadow: 0 0 12px rgba(239,68,68,.8);
+}
+.safety-pulse-ring {
+    position: absolute;
+    inset: 8px;
+    border-radius: 12px;
+    border: 2px solid rgba(239,68,68,.5);
+    animation: safetyPulse 1.8s ease-out infinite;
+}
+@keyframes safetyPulse {
+    0%   { transform: scale(0.8); opacity: 1; }
+    100% { transform: scale(1.6); opacity: 0; }
+}
+.safety-title { font-weight: 900; font-size: 16px; }
+.safety-sub   { font-size: 11.5px; color: rgba(255,255,255,.65); margin-top: 2px; font-weight: 600; }
+
+.safety-stats {
+    display: flex; align-items: center; justify-content: space-between;
+    background: rgba(255,255,255,.04);
+    border: 1px solid rgba(255,255,255,.06);
+    border-radius: 14px;
+    padding: 10px 8px;
+    margin-bottom: 12px;
+    position: relative;
+}
+.safety-stat { flex: 1; text-align: center; }
+.safety-stat-num { font-weight: 900; font-size: 20px; line-height: 1; color: white; }
+.safety-stat-lbl { font-size: 10.5px; color: rgba(255,255,255,.55); margin-top: 4px; font-weight: 700; }
+.safety-stat-divider { width: 1px; height: 26px; background: rgba(255,255,255,.10); }
+
+.safety-types {
+    display: flex; flex-wrap: wrap; gap: 6px;
+    margin-bottom: 14px;
+    position: relative;
+}
+.safety-type {
+    font-size: 10.5px;
+    font-weight: 800;
+    padding: 4px 10px;
+    border-radius: 999px;
+}
+
+.safety-actions { display: flex; gap: 8px; position: relative; }
+.safety-btn {
+    flex: 1;
+    padding: 11px 12px;
+    border-radius: 12px;
+    font-weight: 900; font-size: 12.5px;
+    text-decoration: none;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    transition: transform .12s ease;
+}
+.safety-btn:active { transform: scale(0.97); }
+.safety-btn-primary {
+    background: var(--teal);
+    color: white;
+    box-shadow: 0 8px 18px -6px rgba(13,148,136,.55);
+}
+.safety-btn-ghost {
+    background: rgba(255,255,255,.08);
+    color: white;
+    border: 1px solid rgba(255,255,255,.10);
 }
 </style>
 

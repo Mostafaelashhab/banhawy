@@ -56,6 +56,17 @@ class TaskController extends Controller
             'status'  => 'open',
         ]);
 
+        try {
+            app(\App\Services\PushSender::class)->toAdmins([
+                'title' => '📋 مهمة جديدة منشورة',
+                'body'  => mb_substr($task->title, 0, 80).' · '.($task->location ?? 'بنها'),
+                'url'   => route('admin.tasks.index'),
+                'tag'   => 'admin-task-'.$task->id,
+            ]);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('[push admins task] '.$e->getMessage());
+        }
+
         return redirect()->route('tasks.show', $task)->with('flash', 'تم نشر المهمة ✓');
     }
 

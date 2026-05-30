@@ -108,6 +108,12 @@ class RegisterController extends Controller
         $details = session('register.business');
         $typeId  = session('register.business_type_id');
 
+        $chosenPlan = Plan::findOrFail($data['plan_id']);
+
+        // ALWAYS create the business on the FREE plan first.
+        // Paid plans (Pro / Business) must be activated by admin after receipt approval.
+        $freePlan = Plan::where('slug', 'free')->firstOrFail();
+
         // Promote the user from visitor → owner now that they have a business
         if (Auth::user()->role !== 'owner') {
             Auth::user()->update(['role' => 'owner']);
@@ -116,7 +122,7 @@ class RegisterController extends Controller
         $business = Business::create([
             'owner_id'         => Auth::id(),
             'business_type_id' => $typeId,
-            'plan_id'          => $data['plan_id'],
+            'plan_id'          => $freePlan->id,
             'name'             => $details['name'],
             'slug'             => Str::slug($details['name']) . '-' . Str::lower(Str::random(4)),
             'category'         => $details['category'],
@@ -131,14 +137,13 @@ class RegisterController extends Controller
             'setup_progress'   => 60,
         ]);
 
-        $plan = Plan::find($data['plan_id']);
         Subscription::create([
             'business_id' => $business->id,
-            'plan_id'     => $plan->id,
-            'status'      => 'trial',
+            'plan_id'     => $freePlan->id,
+            'status'      => 'active',
             'starts_at'   => now()->toDateString(),
-            'ends_at'     => now()->addMonth()->toDateString(),
-            'amount'      => $plan->price_monthly,
+            'ends_at'     => null,
+            'amount'      => 0,
         ]);
 
         session()->forget(['register.business_type_id', 'register.business']);
@@ -153,6 +158,13 @@ class RegisterController extends Controller
             ]);
         } catch (\Throwable $e) {
             \Illuminate\Support\Facades\Log::warning('[push admins biz] '.$e->getMessage());
+        }
+
+        // If they picked a paid plan, route them through the payment flow.
+        if (in_array($chosenPlan->slug, ['pro', 'business'], true)) {
+            return redirect()
+                ->route('merchant.upgrade', ['plan' => $chosenPlan->slug, 'cycle' => 'monthly'])
+                ->with('flash', 'تم إنشاء حسابك مجاناً ✓ ارفع إيصال الدفع لتفعيل خطة '.$chosenPlan->name);
         }
 
         return redirect()->route('register.success', $business);

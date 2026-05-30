@@ -8,7 +8,7 @@
  * Push: handles push events + notification clicks
  * ──────────────────────────────────────────────────────────── */
 
-const CACHE_VERSION = 'banhawy-v1.0.6';
+const CACHE_VERSION = 'banhawy-v1.0.8';
 const SHELL_CACHE   = `${CACHE_VERSION}-shell`;
 const PAGES_CACHE   = `${CACHE_VERSION}-pages`;
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;

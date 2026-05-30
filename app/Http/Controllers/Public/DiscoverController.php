@@ -70,8 +70,14 @@ class DiscoverController extends Controller
             ->orderBy('sort')
             ->get();
 
+        $alertsActive = \App\Models\RoadAlert::active()->count();
+        $alertsToday  = \App\Models\RoadAlert::active()
+            ->where('created_at', '>=', now()->startOfDay())
+            ->count();
+
         return view('public.discover', compact(
-            'shipping', 'services', 'featured', 'latestTasks', 'latestLost', 'types'
+            'shipping', 'services', 'featured', 'latestTasks', 'latestLost', 'types',
+            'alertsActive', 'alertsToday'
         ));
     }
 }

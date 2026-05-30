@@ -113,7 +113,10 @@
                 </div>
             </div>
             @if($planSlug !== 'business')
-                <a href="{{ route('pricing') }}" class="btn btn-teal" style="padding: 8px 12px; font-size: 11.5px;">
+                @php
+                    $upgradeTarget = $planSlug === 'pro' ? 'business' : 'pro';
+                @endphp
+                <a href="{{ route('merchant.upgrade', ['plan' => $upgradeTarget, 'cycle' => 'monthly']) }}" class="btn btn-teal" style="padding: 8px 12px; font-size: 11.5px;">
                     @if($planSlug === 'pro') ارقّى Business @else ترقية @endif
                 </a>
             @endif
@@ -143,7 +146,7 @@
         <div style="background: linear-gradient(135deg, rgba(13,148,136,.08), rgba(13,148,136,.02)); border: 1px solid rgba(13,148,136,.20); border-radius: 14px; padding: 12px; margin-bottom: 10px;">
             <div style="font-weight: 900; font-size: 12.5px; margin-bottom: 4px;">🚀 اطلع لـ Pro بـ 99 ج/شهر</div>
             <div style="font-size: 11.5px; color: var(--ink-3); line-height: 1.7;">صور غير محدودة · علامة موثّق ✓ · ظهور أعلى · تنبيهات فورية</div>
-            <a href="{{ route('pricing') }}" style="display: inline-block; margin-top: 8px; color: var(--teal); font-weight: 800; font-size: 12px;">شوف التفاصيل ›</a>
+            <a href="{{ route('merchant.upgrade', ['plan' => 'pro', 'cycle' => 'monthly']) }}" style="display: inline-block; margin-top: 8px; color: var(--teal); font-weight: 800; font-size: 12px;">ارقّى دلوقتي ›</a>
         </div>
     @endif
 

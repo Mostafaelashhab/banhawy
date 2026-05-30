@@ -104,7 +104,14 @@
                     @endforeach
                 </ul>
 
-                <a href="{{ route('register.step1') }}" class="plan-cta @if($plan->is_featured) plan-cta-primary @else plan-cta-line @endif">
+                @php
+                    $ctaUrl = $monthly === 0
+                        ? route('register.step1')
+                        : (auth()->check() && auth()->user()->isOwner()
+                            ? route('merchant.upgrade', ['plan' => $plan->slug, 'cycle' => 'monthly'])
+                            : route('register.step1', ['plan' => $plan->slug]));
+                @endphp
+                <a href="{{ $ctaUrl }}" class="plan-cta @if($plan->is_featured) plan-cta-primary @else plan-cta-line @endif">
                     @if($monthly === 0)
                         ابدأ مجاناً الآن
                     @else

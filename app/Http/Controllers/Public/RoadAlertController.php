@@ -183,6 +183,17 @@ class RoadAlertController extends Controller
 
         $this->bumpCacheVersion();
 
+        try {
+            app(\App\Services\PushSender::class)->toAdmins([
+                'title' => '⚠️ تنبيه طريق جديد',
+                'body'  => $cfg['label_ar'].' · '.mb_substr($data['description'] ?? 'بدون وصف', 0, 80),
+                'url'   => route('admin.alerts.index'),
+                'tag'   => 'admin-alert-'.$alert->id,
+            ]);
+        } catch (\Throwable $e) {
+            Log::warning('[push admins alert] '.$e->getMessage());
+        }
+
         Log::info('[alert.created]', [
             'id'   => $alert->id,
             'type' => $alert->type,

@@ -69,6 +69,18 @@ class LostItemController extends Controller
             'status'  => 'open',
         ]);
 
+        try {
+            $kindLabel = $item->kind === 'found' ? '✋ حد لقى حاجة' : '🔍 بلاغ مفقودات جديد';
+            app(\App\Services\PushSender::class)->toAdmins([
+                'title' => $kindLabel,
+                'body'  => mb_substr($item->title, 0, 80).' · '.($item->location ?? 'بنها'),
+                'url'   => route('admin.lost.index'),
+                'tag'   => 'admin-lost-'.$item->id,
+            ]);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('[push admins lost] '.$e->getMessage());
+        }
+
         return redirect()->route('lost.show', $item)->with('flash', 'تم نشر البلاغ ✓');
     }
 

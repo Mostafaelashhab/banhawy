@@ -158,8 +158,13 @@ class Business extends Model
 
     public function whatsappLink(string $message = ''): string
     {
-        $phone = preg_replace('/\D/', '', $this->whatsapp);
+        $phone = \App\Support\Phone::forWhatsapp($this->whatsapp);
         $q = $message ? '?text=' . rawurlencode($message) : '';
         return "https://wa.me/{$phone}{$q}";
+    }
+
+    public function telLink(): string
+    {
+        return \App\Support\Phone::forTel($this->phone ?? $this->whatsapp);
     }
 }

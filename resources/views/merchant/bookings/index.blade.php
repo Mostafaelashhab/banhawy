@@ -67,7 +67,7 @@
 
                 @if(in_array($booking->status, ['new', 'confirmed']))
                     <div style="display: flex; gap: 5px; margin-top: 8px;">
-                        <a href="https://wa.me/{{ preg_replace('/\D/', '', $booking->customer_phone) }}" target="_blank" class="btn btn-wa" style="padding: 5px 9px; font-size: 10px;">
+                        <a href="https://wa.me/{{ \App\Support\Phone::forWhatsapp($booking->customer_phone) }}" target="_blank" class="btn btn-wa" style="padding: 5px 9px; font-size: 10px;">
                             <x-icon name="whatsapp" :size="11" stroke="white"/> واتساب
                         </a>
                         <form method="post" action="{{ route('merchant.bookings.update', $booking) }}" style="display: contents;">

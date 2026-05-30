@@ -158,7 +158,7 @@
         <div class="biz-main">
             {{-- Quick actions --}}
             <div class="biz-quick">
-                <a href="tel:{{ $business->phone ?? $business->whatsapp }}" class="btn btn-line biz-quick-btn">
+                <a href="tel:{{ $business->telLink() }}" class="btn btn-line biz-quick-btn">
                     <span style="color: var(--teal);"><x-icon name="phone" :size="18" stroke="#0D9488"/></span>
                     اتصل
                 </a>
@@ -205,6 +205,79 @@
                         </span>
                     @endif
                 </div>
+
+                {{-- ── ADD REVIEW FORM ─────────────────────── --}}
+                @php $myReview = auth()->check() ? $business->reviews->firstWhere('user_id', auth()->id()) : null; @endphp
+                @auth
+                    <div class="biz-review-form" style="background: var(--gray-100); border-radius: 14px; padding: 12px; margin-bottom: 12px;">
+                        <div style="font-weight: 800; font-size: 13px; margin-bottom: 8px;">
+                            {{ $myReview ? 'عدّل تقييمك' : 'قيّم النشاط' }}
+                        </div>
+                        <form method="post" action="{{ route('business.review.store', $business) }}">
+                            @csrf
+                            <div class="rating-picker" style="display: flex; gap: 6px; direction: ltr; justify-content: flex-end; margin-bottom: 10px;">
+                                @for($s = 5; $s >= 1; $s--)
+                                    <input type="radio" name="rating" id="rate-{{ $s }}" value="{{ $s }}"
+                                           @checked(($myReview->rating ?? 0) == $s)
+                                           style="position: absolute; opacity: 0; pointer-events: none;">
+                                    <label for="rate-{{ $s }}" data-star="{{ $s }}"
+                                           style="cursor: pointer; line-height: 1; -webkit-tap-highlight-color: transparent;">
+                                        <svg class="rate-star" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#D9DDE3" stroke-width="1.6" stroke-linejoin="round">
+                                            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                                        </svg>
+                                    </label>
+                                @endfor
+                            </div>
+                            <textarea name="body" rows="2" maxlength="1000"
+                                      placeholder="اكتب رأيك (اختياري) — تجربتك مع الصنايعي/الشركة"
+                                      style="width: 100%; border: 1px solid var(--ink-5); border-radius: 10px; padding: 8px 10px; font-size: 13px; font-family: inherit; resize: vertical;">{{ $myReview->body ?? '' }}</textarea>
+                            @error('rating') <div style="color: #B91C1C; font-size: 11px; margin-top: 4px;">{{ $message }}</div> @enderror
+                            <div style="display: flex; gap: 8px; margin-top: 10px; align-items: center;">
+                                <button type="submit" class="btn btn-teal" style="padding: 9px 14px; font-size: 12px;">
+                                    {{ $myReview ? 'حفظ' : 'إرسال' }}
+                                </button>
+                                @if($myReview)
+                                    <button type="submit" form="del-my-review" class="btn btn-line" style="padding: 9px 14px; font-size: 12px; color: #B91C1C; border-color: #FECACA;">
+                                        حذف تقييمي
+                                    </button>
+                                @endif
+                            </div>
+                        </form>
+                        @if($myReview)
+                            <form id="del-my-review" method="post" action="{{ route('business.review.destroy', [$business, $myReview]) }}" style="display: none;">
+                                @csrf @method('DELETE')
+                            </form>
+                        @endif
+                    </div>
+                    <script>
+                        (function() {
+                            const picker = document.currentScript.previousElementSibling.querySelector('.rating-picker');
+                            if (!picker) return;
+                            const labels = [...picker.querySelectorAll('label')].sort((a,b)=>+a.dataset.star - +b.dataset.star);
+                            const radios = [...picker.querySelectorAll('input[type=radio]')];
+                            const paint = (val) => {
+                                labels.forEach(l => {
+                                    const poly = l.querySelector('polygon');
+                                    if (!poly) return;
+                                    const filled = +l.dataset.star <= val;
+                                    poly.setAttribute('stroke', filled ? '#F59E0B' : '#D9DDE3');
+                                    poly.setAttribute('fill',   filled ? '#F59E0B' : 'none');
+                                });
+                            };
+                            labels.forEach(l => {
+                                l.addEventListener('mouseenter', () => paint(+l.dataset.star));
+                                l.addEventListener('mouseleave', () => paint(+(radios.find(r=>r.checked)?.value || 0)));
+                                l.addEventListener('click',     () => { radios.find(r=>+r.value===+l.dataset.star).checked = true; paint(+l.dataset.star); });
+                            });
+                            paint(+(radios.find(r=>r.checked)?.value || 0));
+                        })();
+                    </script>
+                @else
+                    <a href="{{ route('login') }}?next={{ urlencode(route('business.show', $business).'#biz-reviews') }}"
+                       class="btn btn-line btn-full" style="padding: 10px; font-size: 12px; margin-bottom: 12px;">
+                        سجّل دخولك عشان تقدر تقيّم
+                    </a>
+                @endauth
 
                 @if($reviewsCount === 0)
                     <p class="muted" style="text-align: center; padding: 16px 0;">لا توجد تقييمات بعد — كن أول من يضيف رأيه.</p>

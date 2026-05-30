@@ -137,19 +137,18 @@ html { overflow-x: hidden; }
 
 /* ── Bottom nav (mobile) ────────────────────────────────────────── */
 .bnav {
-    background: rgba(255, 255, 255, 0.92);
-    -webkit-backdrop-filter: saturate(180%) blur(18px);
-    backdrop-filter: saturate(180%) blur(18px);
-    border-top: 1px solid rgba(0, 27, 42, 0.08);
-    box-shadow: 0 -8px 24px -12px rgba(0, 27, 42, 0.18);
+    background: var(--navy);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    box-shadow: 0 16px 36px -10px rgba(0, 27, 42, 0.45), 0 4px 12px -4px rgba(0, 27, 42, 0.25);
+    border-radius: 999px;
     display: grid;
     grid-template-columns: repeat(5, 1fr);
     align-items: center;
-    padding: 4px 6px 0;
-    height: 50px;
+    padding: 0 6px;
+    height: 60px;
     position: fixed;
-    left: 0; right: 0;
-    bottom: 0;
+    left: 16px; right: 16px;
+    bottom: max(14px, env(safe-area-inset-bottom));
     z-index: 40;
     transition: transform .25s ease;
     will-change: transform;
@@ -159,9 +158,9 @@ html { overflow-x: hidden; }
     transform: none;
 }
 
-/* Push page content above the fixed bnav so nothing hides behind it. */
+/* Push page content above the floating pill bnav so nothing hides behind it. */
 .shell:not(.is-landing) {
-    padding-bottom: 50px;
+    padding-bottom: calc(60px + 14px + max(14px, env(safe-area-inset-bottom)));
 }
 /* Pages that explicitly opt out of a bnav (e.g. public business pages with sticky CTA) */
 .shell.no-bnav { padding-bottom: 0; }
@@ -187,48 +186,47 @@ html::-webkit-scrollbar, body::-webkit-scrollbar { display: none; width: 0; heig
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 2px;
-    color: var(--ink-4);
-    font-size: 10px;
-    font-weight: 700;
     min-width: 0;
-    padding: 0 2px;
     height: 100%;
+    color: rgba(255, 255, 255, 0.55);
     text-decoration: none;
     transition: color .18s ease;
     -webkit-tap-highlight-color: transparent;
 }
-.bnav-item:active { transform: scale(0.94); }
-.bnav-item span {
-    max-width: 100%;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    line-height: 1.4;
-}
+.bnav-item:active { transform: scale(0.92); }
+.bnav-item span { display: none; }
 
-/* Icon sits inside an icon-container — clean separation from label */
 .bnav-item .ico-wrap {
-    /* fallback layer; the actual svg is sized below */
     display: grid;
     place-items: center;
-    width: 22px;
-    height: 22px;
+    width: 24px;
+    height: 24px;
 }
 .bnav-item svg {
-    width: 22px;
-    height: 22px;
+    width: 24px;
+    height: 24px;
     flex-shrink: 0;
     display: block;
     transition: transform .18s ease;
+    stroke: currentColor;
 }
 
-/* Active state: just bolder color + slight scale on icon · clean iOS-like */
+/* Active: white icon + a small teal dot underneath */
 .bnav-item.active {
-    color: var(--teal);
-    font-weight: 800;
+    color: white;
 }
-.bnav-item.active svg { transform: scale(1.10); }
+.bnav-item.active svg { transform: scale(1.06); }
+.bnav-item.active::after {
+    content: '';
+    position: absolute;
+    bottom: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: var(--teal);
+}
 
 /* ── Misc atoms ─────────────────────────────────────────────────── */
 .muted { color: var(--ink-3); font-size: 12px; font-weight: 600; }

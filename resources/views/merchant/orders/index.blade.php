@@ -53,7 +53,7 @@
 
             @if(in_array($order->status, ['new', 'preparing']))
                 <div style="display: flex; gap: 6px; margin-top: 10px;">
-                    <a href="https://wa.me/{{ preg_replace('/\D/', '', $order->customer_phone) }}?text={{ rawurlencode('تأكيد طلبك ' . ($order->code ?: '#' . $order->id) . ' من ' . $business->name) }}" target="_blank" class="btn btn-wa" style="flex: 1; padding: 8px; font-size: 11px;">
+                    <a href="https://wa.me/{{ \App\Support\Phone::forWhatsapp($order->customer_phone) }}?text={{ rawurlencode('تأكيد طلبك ' . ($order->code ?: '#' . $order->id) . ' من ' . $business->name) }}" target="_blank" class="btn btn-wa" style="flex: 1; padding: 8px; font-size: 11px;">
                         <x-icon name="whatsapp" :size="12" stroke="white"/> تواصل واتساب
                     </a>
                     <form method="post" action="{{ route('merchant.orders.update', $order) }}" style="display: contents;">
