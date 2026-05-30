@@ -420,7 +420,7 @@
     {{-- Floating card — populated dynamically when a marker is tapped --}}
     @if($businesses->isNotEmpty())
         <a id="map-card" href="#"
-           style="position: fixed; right: 12px; left: 12px; bottom: calc(88px + max(14px, env(safe-area-inset-bottom))); background: white; border-radius: 16px; padding: 10px; box-shadow: 0 12px 32px -8px rgba(0,27,42,.25), 0 4px 12px -4px rgba(0,27,42,.12); display: flex; gap: 10px; align-items: center; z-index: 500;">
+           style="position: fixed; right: 12px; left: 12px; bottom: 92px; background: white; border-radius: 16px; padding: 10px; box-shadow: 0 12px 32px -8px rgba(0,27,42,.25), 0 4px 12px -4px rgba(0,27,42,.12); display: flex; gap: 10px; align-items: center; z-index: 500;">
             <div id="map-card-thumb" class="ph" style="width: 52px; height: 52px; border-radius: 12px; flex-shrink: 0; font-size: 13px;"></div>
             <div style="flex: 1; min-width: 0;">
                 <div style="display: flex; align-items: center; justify-content: space-between; gap: 6px;">

@@ -148,7 +148,11 @@ html { overflow-x: hidden; }
     height: 60px;
     position: fixed;
     left: 16px; right: 16px;
-    bottom: max(14px, env(safe-area-inset-bottom));
+    /* Sit a tight 12px from the viewport bottom on every device.
+       Safe-area is ignored on purpose so the pill looks identical
+       across PWA / browser / Android / iPhone. The 60px-tall bar
+       still keeps icons clear of the iOS home indicator gesture zone. */
+    bottom: 12px;
     z-index: 40;
     transition: transform .25s ease;
     will-change: transform;
@@ -158,9 +162,10 @@ html { overflow-x: hidden; }
     transform: none;
 }
 
-/* Push page content above the floating pill bnav so nothing hides behind it. */
+/* Push page content above the floating pill bnav so nothing hides behind it.
+   60px pill height + 12px bottom offset + 12px breathing room = 84px. */
 .shell:not(.is-landing) {
-    padding-bottom: calc(60px + 14px + max(14px, env(safe-area-inset-bottom)));
+    padding-bottom: 84px;
 }
 /* Pages that explicitly opt out of a bnav (e.g. public business pages with sticky CTA) */
 .shell.no-bnav { padding-bottom: 0; }
